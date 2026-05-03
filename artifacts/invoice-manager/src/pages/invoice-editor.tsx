@@ -167,7 +167,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       performAutoSave();
-    }, 1500);
+    }, 1000);
   }
 
   function performAutoSave() {
