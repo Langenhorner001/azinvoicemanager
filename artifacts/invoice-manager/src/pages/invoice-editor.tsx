@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { useLocation, useParams } from "wouter";
 import { Plus, Trash2, ChevronDown, Printer, Download, ArrowLeft, Save } from "lucide-react";
 import {
@@ -309,21 +311,51 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     window.print();
   }
 
-  function handleDownloadPDF() {
+  const handleDownloadPDF = useCallback(async () => {
     const previewEl = document.getElementById("invoice-preview-panel");
-    if (!previewEl) { window.print(); return; }
-    const printWindow = window.open("", "_blank", "width=800,height=1000");
-    if (!printWindow) { window.print(); return; }
-    const styles = Array.from(document.styleSheets)
-      .flatMap((sheet) => {
-        try { return Array.from(sheet.cssRules).map((r) => r.cssText); } catch { return []; }
-      })
-      .join("\n");
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Invoice</title><style>${styles}\nbody{margin:0;background:white;}</style></head><body>${previewEl.innerHTML}</body></html>`);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
-  }
+    const sectionEl = document.getElementById("invoice-preview-section");
+    if (!previewEl) return;
+
+    const wasHidden = sectionEl && getComputedStyle(sectionEl).display === "none";
+    if (wasHidden && sectionEl) {
+      sectionEl.style.display = "flex";
+      sectionEl.style.visibility = "visible";
+    }
+
+    try {
+      const canvas = await html2canvas(previewEl, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      const fileName = invoiceNumber
+        ? `invoice-${invoiceNumber.replace(/\s+/g, "-")}.pdf`
+        : "invoice.pdf";
+      pdf.save(fileName);
+    } catch {
+      window.print();
+    } finally {
+      if (wasHidden && sectionEl) {
+        sectionEl.style.display = "";
+        sectionEl.style.visibility = "";
+      }
+    }
+  }, [invoiceNumber]);
 
   const subtotal = items.reduce((acc, item) => acc + item.qty * item.price, 0);
   const grandTotal = items.reduce((acc, item) => acc + lineTotal(item), 0);
@@ -595,7 +627,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
           </ScrollArea>
 
           {/* RIGHT: Preview */}
-          <div className="hidden lg:flex flex-1 bg-muted/40 overflow-auto items-start justify-center p-8">
+          <div id="invoice-preview-section" className="hidden lg:flex flex-1 bg-muted/40 overflow-auto items-start justify-center p-8">
             <div className="w-full max-w-[550px]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Preview</span>
