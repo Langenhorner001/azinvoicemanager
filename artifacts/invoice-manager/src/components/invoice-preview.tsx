@@ -173,7 +173,7 @@ export function InvoicePreview({
           Thank you
         </div>
         <div style={{ textAlign: "right", lineHeight: "1.7" }}>
-          <div style={{ fontWeight: 700, fontSize: "11px", color: "#000" }}>AZ Distribution</div>
+          <div style={{ fontWeight: 700, fontSize: "11px", color: "#000" }}>AZ DISTRIBUTION</div>
           <div style={{ color: "#666" }}>+92 318 4396075</div>
           <div style={{ color: "#666" }}>Mirpur Azad Kashmir, 12130</div>
         </div>

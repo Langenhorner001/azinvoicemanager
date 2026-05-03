@@ -60,7 +60,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <div className="text-sm font-semibold text-sidebar-foreground leading-none">Invoice Manager</div>
-            <div className="text-xs text-muted-foreground mt-0.5">AZ Distribution</div>
+            <div className="text-xs text-muted-foreground mt-0.5">AZ DISTRIBUTION</div>
           </div>
         </div>
 
@@ -88,7 +88,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Dark mode toggle */}
-        <div className="px-4 py-4 border-t border-sidebar-border">
+        <div className="px-4 py-3 border-t border-sidebar-border space-y-2">
           <Button
             variant="ghost"
             size="sm"
@@ -99,6 +99,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             {theme === "dark" ? "Light Mode" : "Dark Mode"}
           </Button>
+          <div className="px-1 pb-1">
+            <p className="text-[10px] text-muted-foreground/60 leading-tight">
+              Developed by <span className="font-semibold text-muted-foreground">sonic</span>
+            </p>
+          </div>
         </div>
       </aside>
 
@@ -117,7 +122,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="w-6 h-6 bg-foreground rounded flex items-center justify-center">
               <span className="text-background font-bold text-xs">AZ</span>
             </div>
-            <span className="text-sm font-semibold">Invoice Manager</span>
+            <span className="text-sm font-semibold">AZ DISTRIBUTION</span>
           </div>
           <button className="p-1.5 rounded-md hover:bg-accent" onClick={toggleTheme}>
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

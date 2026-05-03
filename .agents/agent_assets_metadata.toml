@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "FCIu-NMd5h-TNuwpoZ1BB"
+uri = "file://AZ_DISTRIBUTION_GUIDE.md"
+type = "text"
+title = "AZ DISTRIBUTION — مکمل راہنما"
