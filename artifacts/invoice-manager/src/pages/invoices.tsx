@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Plus, Search, Trash2, FileEdit, FileText } from "lucide-react";
-import { useListInvoices, useDeleteInvoice, getListInvoicesQueryKey } from "@workspace/api-client-react";
+import { useListInvoices, useDeleteInvoice, getListInvoicesQueryKey, getGetNextInvoiceNumberQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ export default function InvoicesPage() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNextInvoiceNumberQueryKey() });
         setDeleteId(null);
       },
     },

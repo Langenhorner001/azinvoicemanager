@@ -87,7 +87,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
 
   // API data
   const { data: nextNumber, isLoading: loadingNextNum } = useGetNextInvoiceNumber({
-    query: { queryKey: getGetNextInvoiceNumberQueryKey(), enabled: mode === "new" },
+    query: { queryKey: getGetNextInvoiceNumberQueryKey(), enabled: mode === "new", staleTime: 0, refetchOnMount: true },
   });
 
   const { data: existingInvoice, isLoading: loadingExisting } = useGetInvoice(
@@ -102,6 +102,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     mutation: {
       onSuccess: (inv) => {
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNextInvoiceNumberQueryKey() });
         return inv;
       },
     },
