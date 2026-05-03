@@ -5,6 +5,7 @@ interface InvoiceItem {
   qty: number;
   price: number;
   discount: number;
+  discountType?: "percent" | "amount";
 }
 
 interface InvoicePreviewProps {
@@ -56,11 +57,12 @@ export function InvoicePreview({
 
   const computedItems = items.map((item) => {
     const lineSubtotal = item.qty * item.price;
-    const discountAmt = lineSubtotal * (item.discount / 100);
-    const lineTotal = lineSubtotal - discountAmt;
+    const isAmount = item.discountType === "amount";
+    const discountAmt = isAmount ? item.discount : lineSubtotal * (item.discount / 100);
+    const lineTotal = Math.max(0, lineSubtotal - discountAmt);
     subtotal += lineSubtotal;
     grandTotal += lineTotal;
-    return { ...item, lineTotal, discountAmt };
+    return { ...item, lineTotal, discountAmt, isAmount };
   });
 
   return (
@@ -212,7 +214,11 @@ export function InvoicePreview({
                   {formatNum(item.price)}
                 </div>
                 <div style={{ textAlign: "center", color: "#000", fontSize: "12px" }}>
-                  {item.discount > 0 ? `${item.discount}` : "—"}
+                  {item.discount > 0
+                    ? item.isAmount
+                      ? `Rs. ${formatNum(item.discount)}`
+                      : `${item.discount}%`
+                    : "—"}
                 </div>
                 <div style={{ textAlign: "right", color: "#000", fontSize: "12px" }}>
                   {formatNum(Math.round(item.lineTotal))}

@@ -45,6 +45,8 @@ import { useToast } from "@/hooks/use-toast";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "overdue";
 
+type DiscountType = "percent" | "amount";
+
 interface ItemRow {
   key: string;
   itemName: string;
@@ -52,6 +54,7 @@ interface ItemRow {
   price: number;
   discountEnabled: boolean;
   discount: number;
+  discountType: DiscountType;
 }
 
 function makeKey() {
@@ -66,7 +69,10 @@ function formatDate(d: Date) {
 }
 
 function lineTotal(item: ItemRow) {
-  return item.qty * item.price * (1 - item.discount / 100);
+  const gross = item.qty * item.price;
+  if (!item.discountEnabled || item.discount <= 0) return gross;
+  if (item.discountType === "amount") return Math.max(0, gross - item.discount);
+  return gross * (1 - item.discount / 100);
 }
 
 export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
@@ -83,7 +89,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   const [customerAddress, setCustomerAddress] = useState("");
   const [status, setStatus] = useState<InvoiceStatus>("draft");
   const [items, setItems] = useState<ItemRow[]>([
-    { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0 },
+    { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0, discountType: "percent" },
   ]);
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
 
@@ -143,6 +149,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
             price: Number(item.price),
             discountEnabled: Number(item.discount) > 0,
             discount: Number(item.discount),
+            discountType: ((item as { discountType?: string }).discountType === "amount" ? "amount" : "percent") as DiscountType,
           }))
         );
       }
@@ -171,6 +178,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
         qty: item.qty,
         price: item.price,
         discount: item.discountEnabled ? item.discount : 0,
+        discountType: item.discountType,
       })),
     };
   }
@@ -239,7 +247,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   function addItem() {
     setItems((prev) => [
       ...prev,
-      { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0 },
+      { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0, discountType: "percent" },
     ]);
   }
 
@@ -328,6 +336,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     qty: item.qty,
     price: item.price,
     discount: item.discountEnabled ? item.discount : 0,
+    discountType: item.discountType,
   }));
 
   const statusOptions: { value: InvoiceStatus; label: string }[] = [
@@ -728,7 +737,7 @@ function ItemRowCard({ item, index, products, onUpdate, onRemove, canRemove }: I
       </div>
 
       {/* Discount toggle */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <button
           type="button"
           className={cn(
@@ -743,18 +752,49 @@ function ItemRowCard({ item, index, products, onUpdate, onRemove, canRemove }: I
           Discount
         </button>
         {item.discountEnabled && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            {/* Percent / Amount type toggle */}
+            <div className="inline-flex rounded-md border border-border overflow-hidden h-7">
+              <button
+                type="button"
+                onClick={() => onUpdate({ discountType: "percent" })}
+                className={cn(
+                  "px-2 text-xs font-medium transition-colors",
+                  item.discountType === "percent"
+                    ? "bg-foreground text-background"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                )}
+                data-testid={`button-discount-type-percent-${index}`}
+              >
+                %
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdate({ discountType: "amount" })}
+                className={cn(
+                  "px-2 text-xs font-medium border-l border-border transition-colors",
+                  item.discountType === "amount"
+                    ? "bg-foreground text-background"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                )}
+                data-testid={`button-discount-type-amount-${index}`}
+              >
+                Rs.
+              </button>
+            </div>
             <Input
               type="number"
               min="0"
-              max="100"
+              max={item.discountType === "percent" ? "100" : undefined}
               step="any"
               value={item.discount}
               onChange={(e) => onUpdate({ discount: parseFloat(e.target.value) || 0 })}
-              className="w-16 text-sm h-7"
+              className="w-20 text-sm h-7"
               data-testid={`input-item-discount-${index}`}
             />
-            <span className="text-xs text-muted-foreground">%</span>
+            <span className="text-xs text-muted-foreground">
+              {item.discountType === "percent" ? "%" : "off"}
+            </span>
           </div>
         )}
       </div>
