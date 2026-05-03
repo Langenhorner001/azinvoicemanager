@@ -2,6 +2,9 @@ import { pgTable, serial, text, numeric, boolean, timestamp, integer } from "dri
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
+export const invoiceStatusValues = ["draft", "unpaid", "paid", "overdue"] as const;
+export type InvoiceStatus = (typeof invoiceStatusValues)[number];
+
 export const invoicesTable = pgTable("invoices", {
   id: serial("id").primaryKey(),
   invoiceNumber: text("invoice_number").notNull().unique(),
@@ -11,6 +14,7 @@ export const invoicesTable = pgTable("invoices", {
   subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull().default("0"),
   grandTotal: numeric("grand_total", { precision: 12, scale: 2 }).notNull().default("0"),
   isDraft: boolean("is_draft").notNull().default(true),
+  status: text("status").notNull().default("draft"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

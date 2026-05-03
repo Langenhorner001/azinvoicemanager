@@ -18,7 +18,6 @@ import { InvoicePreview } from "@/components/invoice-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -34,8 +33,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+
+type InvoiceStatus = "draft" | "unpaid" | "paid" | "overdue";
 
 interface ItemRow {
   key: string;
@@ -73,6 +81,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   const [date, setDate] = useState(formatDate(new Date()));
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [status, setStatus] = useState<InvoiceStatus>("draft");
   const [items, setItems] = useState<ItemRow[]>([
     { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0 },
   ]);
@@ -124,6 +133,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
       setDate(existingInvoice.date);
       setCustomerName(existingInvoice.customerName);
       setCustomerAddress(existingInvoice.customerAddress);
+      setStatus((existingInvoice.status as InvoiceStatus) ?? "draft");
       if (existingInvoice.items.length > 0) {
         setItems(
           existingInvoice.items.map((item) => ({
@@ -147,13 +157,15 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   }, [nextNumber, mode, invoiceNumber]);
 
   // Build payload
-  function buildPayload(isDraft: boolean) {
+  function buildPayload(isDraft: boolean, overrideStatus?: InvoiceStatus) {
+    const resolvedStatus = overrideStatus ?? status;
     return {
       invoiceNumber,
       date,
       customerName,
       customerAddress,
       isDraft,
+      status: resolvedStatus,
       items: items.map((item) => ({
         itemName: item.itemName,
         qty: item.qty,
@@ -163,7 +175,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     };
   }
 
-  // Debounced auto-save as draft (fires 1.5s after last change)
+  // Debounced auto-save as draft (fires 1s after last change)
   function scheduleAutoSave() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
@@ -174,7 +186,9 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   function performAutoSave() {
     if (!invoiceNumber.trim() || !date || !customerName.trim()) return;
     setAutoSaveStatus("saving");
-    const payload = buildPayload(true);
+    // In edit mode, preserve the current status. In new mode, always save as draft.
+    const autoSaveStatus_: InvoiceStatus = mode === "new" ? "draft" : status;
+    const payload = buildPayload(mode === "new" ? true : false, autoSaveStatus_);
 
     if (mode === "edit" && id) {
       updateMutation.mutate(
@@ -186,7 +200,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
       );
     } else if (draftId) {
       updateMutation.mutate(
-        { id: draftId, data: payload },
+        { id: draftId, data: { ...payload, isDraft: true, status: "draft" } },
         {
           onSuccess: () => setAutoSaveStatus("saved"),
           onError: () => setAutoSaveStatus("idle"),
@@ -194,7 +208,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
       );
     } else {
       createMutation.mutate(
-        { data: payload },
+        { data: { ...payload, isDraft: true, status: "draft" } },
         {
           onSuccess: (inv) => {
             setDraftId(inv.id);
@@ -238,11 +252,17 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   }
 
   function handleSave(isDraft: boolean) {
+    // Cancel any pending auto-save before manually saving
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
     if (!invoiceNumber.trim() || !date || !customerName.trim()) {
       toast({ title: "Missing fields", description: "Invoice number, date and customer name are required.", variant: "destructive" });
       return;
     }
-    const payload = buildPayload(isDraft);
+    const resolvedStatus: InvoiceStatus = isDraft ? "draft" : (status === "draft" ? "unpaid" : status);
+    const payload = buildPayload(isDraft, resolvedStatus);
     const targetId = mode === "edit" ? id : draftId;
 
     if (targetId) {
@@ -282,7 +302,6 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   }
 
   function handleDownloadPDF() {
-    // Open a print dialog focused on the invoice preview using print-specific CSS
     const previewEl = document.getElementById("invoice-preview-panel");
     if (!previewEl) { window.print(); return; }
     const printWindow = window.open("", "_blank", "width=800,height=1000");
@@ -310,6 +329,20 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     price: item.price,
     discount: item.discountEnabled ? item.discount : 0,
   }));
+
+  const statusOptions: { value: InvoiceStatus; label: string }[] = [
+    { value: "draft", label: "Draft" },
+    { value: "unpaid", label: "Unpaid" },
+    { value: "paid", label: "Paid" },
+    { value: "overdue", label: "Overdue" },
+  ];
+
+  const statusColorMap: Record<InvoiceStatus, string> = {
+    draft: "text-gray-600",
+    unpaid: "text-yellow-700",
+    paid: "text-green-700",
+    overdue: "text-red-700",
+  };
 
   return (
     <Layout>
@@ -408,6 +441,35 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
                       data-testid="input-invoice-date"
                     />
                   </div>
+                </div>
+
+                {/* Status selector */}
+                <div className="mt-3 space-y-1.5">
+                  <Label htmlFor="invoice-status" className="text-xs">Status</Label>
+                  <Select
+                    value={status}
+                    onValueChange={(val) => setStatus(val as InvoiceStatus)}
+                  >
+                    <SelectTrigger
+                      id="invoice-status"
+                      className={`w-full text-sm font-medium ${statusColorMap[status]}`}
+                      data-testid="select-invoice-status"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((opt) => (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          className={`text-sm font-medium ${statusColorMap[opt.value]}`}
+                          data-testid={`option-status-${opt.value}`}
+                        >
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -598,11 +660,11 @@ function ItemRowCard({ item, index, products, onUpdate, onRemove, canRemove }: I
                             onUpdate({ itemName: p.name, price: Number(p.defaultPrice) });
                             setProductPopoverOpen(false);
                           }}
-                          data-testid={`option-product-${p.id}-item-${index}`}
+                          data-testid={`option-product-${p.id}`}
                         >
-                          <div className="flex justify-between w-full">
-                            <span>{p.name}</span>
-                            <span className="text-xs text-muted-foreground">Rs. {Number(p.defaultPrice).toLocaleString()}</span>
+                          <div>
+                            <div className="font-medium">{p.name}</div>
+                            <div className="text-xs text-muted-foreground">Rs. {Number(p.defaultPrice).toLocaleString()}</div>
                           </div>
                         </CommandItem>
                       ))}
@@ -623,7 +685,7 @@ function ItemRowCard({ item, index, products, onUpdate, onRemove, canRemove }: I
         </div>
         {canRemove && (
           <button
-            className="p-1.5 mt-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex-shrink-0"
+            className="mt-1 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex-shrink-0"
             onClick={onRemove}
             data-testid={`button-remove-item-${index}`}
           >
@@ -632,61 +694,69 @@ function ItemRowCard({ item, index, products, onUpdate, onRemove, canRemove }: I
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Qty</label>
           <Input
             type="number"
-            min="1"
-            step="1"
+            min="0"
+            step="any"
             value={item.qty}
-            onChange={(e) => onUpdate({ qty: parseFloat(e.target.value) || 1 })}
+            onChange={(e) => onUpdate({ qty: parseFloat(e.target.value) || 0 })}
             className="text-sm"
             data-testid={`input-item-qty-${index}`}
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Price (Rs.)</label>
+          <label className="text-xs text-muted-foreground">Price</label>
           <Input
             type="number"
             min="0"
-            step="1"
+            step="any"
             value={item.price}
             onChange={(e) => onUpdate({ price: parseFloat(e.target.value) || 0 })}
             className="text-sm"
             data-testid={`input-item-price-${index}`}
           />
         </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Total</label>
+          <div className="h-9 flex items-center px-3 text-sm text-muted-foreground bg-muted/50 rounded-md border border-border">
+            {Math.round(lineTotal(item)).toLocaleString()}
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Switch
-          id={`discount-${item.key}`}
-          checked={item.discountEnabled}
-          onCheckedChange={(checked) => onUpdate({ discountEnabled: checked, discount: checked ? item.discount : 0 })}
-          data-testid={`toggle-discount-${index}`}
-        />
-        <label htmlFor={`discount-${item.key}`} className="text-xs text-muted-foreground cursor-pointer">
+      {/* Discount toggle */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className={cn(
+            "text-xs px-2 py-0.5 rounded border transition-colors",
+            item.discountEnabled
+              ? "border-primary/40 bg-primary/5 text-primary"
+              : "border-border text-muted-foreground hover:border-primary/30"
+          )}
+          onClick={() => onUpdate({ discountEnabled: !item.discountEnabled, discount: item.discountEnabled ? 0 : item.discount })}
+          data-testid={`button-toggle-discount-${index}`}
+        >
           Discount
-        </label>
+        </button>
         {item.discountEnabled && (
-          <div className="flex items-center gap-1 ml-auto">
+          <div className="flex items-center gap-1">
             <Input
               type="number"
               min="0"
               max="100"
-              step="1"
+              step="any"
               value={item.discount}
               onChange={(e) => onUpdate({ discount: parseFloat(e.target.value) || 0 })}
-              className="w-20 h-7 text-sm"
+              className="w-16 text-sm h-7"
               data-testid={`input-item-discount-${index}`}
             />
             <span className="text-xs text-muted-foreground">%</span>
           </div>
         )}
-        <span className={cn("text-xs font-medium text-foreground", item.discountEnabled ? "" : "ml-auto")}>
-          Rs. {Math.round(lineTotal(item)).toLocaleString()}
-        </span>
       </div>
     </div>
   );

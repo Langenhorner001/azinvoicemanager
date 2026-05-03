@@ -34,6 +34,7 @@ export const ListInvoicesResponseItem = zod.object({
   subtotal: zod.number(),
   grandTotal: zod.number(),
   isDraft: zod.boolean(),
+  status: zod.enum(["draft", "unpaid", "paid", "overdue"]),
   createdAt: zod.string(),
   items: zod.array(
     zod.object({
@@ -58,6 +59,7 @@ export const CreateInvoiceBody = zod.object({
   customerName: zod.string(),
   customerAddress: zod.string(),
   isDraft: zod.boolean(),
+  status: zod.enum(["draft", "unpaid", "paid", "overdue"]),
   items: zod.array(
     zod.object({
       itemName: zod.string(),
@@ -92,6 +94,7 @@ export const GetInvoiceResponse = zod.object({
   subtotal: zod.number(),
   grandTotal: zod.number(),
   isDraft: zod.boolean(),
+  status: zod.enum(["draft", "unpaid", "paid", "overdue"]),
   createdAt: zod.string(),
   items: zod.array(
     zod.object({
@@ -119,6 +122,7 @@ export const UpdateInvoiceBody = zod.object({
   customerName: zod.string(),
   customerAddress: zod.string(),
   isDraft: zod.boolean(),
+  status: zod.enum(["draft", "unpaid", "paid", "overdue"]),
   items: zod.array(
     zod.object({
       itemName: zod.string(),
@@ -138,6 +142,7 @@ export const UpdateInvoiceResponse = zod.object({
   subtotal: zod.number(),
   grandTotal: zod.number(),
   isDraft: zod.boolean(),
+  status: zod.enum(["draft", "unpaid", "paid", "overdue"]),
   createdAt: zod.string(),
   items: zod.array(
     zod.object({

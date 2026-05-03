@@ -95,7 +95,7 @@ router.get("/invoices", async (req, res) => {
 });
 
 router.post("/invoices", async (req, res) => {
-  const { invoiceNumber, date, customerName, customerAddress, isDraft, items } = req.body;
+  const { invoiceNumber, date, customerName, customerAddress, isDraft, status, items } = req.body;
 
   if (!invoiceNumber || !date) {
     res.status(400).json({ error: "Missing required fields" });
@@ -111,6 +111,8 @@ router.post("/invoices", async (req, res) => {
 
   const { subtotal, grandTotal } = computeTotals(parsedItems);
 
+  const resolvedStatus = status ?? (isDraft ? "draft" : "unpaid");
+
   const [invoice] = await db
     .insert(invoicesTable)
     .values({
@@ -121,6 +123,7 @@ router.post("/invoices", async (req, res) => {
       subtotal: String(subtotal),
       grandTotal: String(grandTotal),
       isDraft: isDraft ?? true,
+      status: resolvedStatus,
     })
     .returning();
 
@@ -153,7 +156,7 @@ router.get("/invoices/:id", async (req, res) => {
 
 router.put("/invoices/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  const { invoiceNumber, date, customerName, customerAddress, isDraft, items } = req.body;
+  const { invoiceNumber, date, customerName, customerAddress, isDraft, status, items } = req.body;
 
   const existing = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
   if (!existing[0]) {
@@ -170,6 +173,9 @@ router.put("/invoices/:id", async (req, res) => {
 
   const { subtotal, grandTotal } = computeTotals(parsedItems);
 
+  const resolvedIsDraft = isDraft ?? false;
+  const resolvedStatus = status ?? (resolvedIsDraft ? "draft" : existing[0].status ?? "unpaid");
+
   await db
     .update(invoicesTable)
     .set({
@@ -179,7 +185,8 @@ router.put("/invoices/:id", async (req, res) => {
       customerAddress: customerAddress ?? "",
       subtotal: String(subtotal),
       grandTotal: String(grandTotal),
-      isDraft: isDraft ?? false,
+      isDraft: resolvedIsDraft,
+      status: resolvedStatus,
     })
     .where(eq(invoicesTable.id, id));
 

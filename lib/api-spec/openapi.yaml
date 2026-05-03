@@ -390,6 +390,10 @@ components:
         - price
         - discount
 
+    InvoiceStatus:
+      type: string
+      enum: [draft, unpaid, paid, overdue]
+
     Invoice:
       type: object
       properties:
@@ -409,6 +413,8 @@ components:
           type: number
         isDraft:
           type: boolean
+        status:
+          $ref: "#/components/schemas/InvoiceStatus"
         createdAt:
           type: string
         items:
@@ -424,6 +430,7 @@ components:
         - subtotal
         - grandTotal
         - isDraft
+        - status
         - createdAt
         - items
 
@@ -440,6 +447,8 @@ components:
           type: string
         isDraft:
           type: boolean
+        status:
+          $ref: "#/components/schemas/InvoiceStatus"
         items:
           type: array
           items:
@@ -450,6 +459,7 @@ components:
         - customerName
         - customerAddress
         - isDraft
+        - status
         - items
 
     Customer:

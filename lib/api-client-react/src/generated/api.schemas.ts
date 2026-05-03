@@ -34,6 +34,15 @@ export interface InvoiceItemInput {
   discount: number;
 }
 
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+export const InvoiceStatus = {
+  draft: "draft",
+  unpaid: "unpaid",
+  paid: "paid",
+  overdue: "overdue",
+} as const;
+
 export interface Invoice {
   id: number;
   invoiceNumber: string;
@@ -43,6 +52,7 @@ export interface Invoice {
   subtotal: number;
   grandTotal: number;
   isDraft: boolean;
+  status: InvoiceStatus;
   createdAt: string;
   items: InvoiceItem[];
 }
@@ -53,6 +63,7 @@ export interface CreateInvoiceBody {
   customerName: string;
   customerAddress: string;
   isDraft: boolean;
+  status: InvoiceStatus;
   items: InvoiceItemInput[];
 }
 
