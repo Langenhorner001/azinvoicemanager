@@ -23,6 +23,18 @@ export const ListInvoicesQueryParams = zod.object({
     .string()
     .optional()
     .describe("Search by invoice number or customer name"),
+  status: zod
+    .enum(["draft", "unpaid", "paid", "overdue"])
+    .optional()
+    .describe("Filter by invoice status"),
+  dateFrom: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter invoices from this date (inclusive, YYYY-MM-DD)"),
+  dateTo: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter invoices to this date (inclusive, YYYY-MM-DD)"),
 });
 
 export const ListInvoicesResponseItem = zod.object({

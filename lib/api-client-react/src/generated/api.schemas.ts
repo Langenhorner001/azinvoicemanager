@@ -105,4 +105,16 @@ export type ListInvoicesParams = {
    * Search by invoice number or customer name
    */
   search?: string;
+  /**
+   * Filter by invoice status
+   */
+  status?: InvoiceStatus;
+  /**
+   * Filter invoices from this date (inclusive, YYYY-MM-DD)
+   */
+  dateFrom?: string;
+  /**
+   * Filter invoices to this date (inclusive, YYYY-MM-DD)
+   */
+  dateTo?: string;
 };

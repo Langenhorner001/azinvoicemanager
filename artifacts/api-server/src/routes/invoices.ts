@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { invoicesTable, invoiceItemsTable } from "@workspace/db/schema";
-import { eq, like, or, desc, and, sql } from "drizzle-orm";
+import { eq, like, or, desc, and, sql, gte, lte } from "drizzle-orm";
 
 const router = Router();
 
@@ -65,19 +65,48 @@ router.get("/invoices/next-number", async (_req, res) => {
   res.json({ invoiceNumber: generateInvoiceNumber(count) });
 });
 
+const VALID_STATUSES = ["draft", "unpaid", "paid", "overdue"] as const;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
 router.get("/invoices", async (req, res) => {
   const search = req.query.search as string | undefined;
-  let invoices;
+  const statusRaw = req.query.status as string | undefined;
+  const dateFromRaw = req.query.dateFrom as string | undefined;
+  const dateToRaw = req.query.dateTo as string | undefined;
+
+  const status = statusRaw && VALID_STATUSES.includes(statusRaw as typeof VALID_STATUSES[number]) ? statusRaw : undefined;
+  const dateFrom = dateFromRaw && DATE_REGEX.test(dateFromRaw) ? dateFromRaw : undefined;
+  const dateTo = dateToRaw && DATE_REGEX.test(dateToRaw) ? dateToRaw : undefined;
+
+  const conditions = [];
+
   if (search) {
+    conditions.push(
+      or(
+        like(invoicesTable.invoiceNumber, `%${search}%`),
+        like(invoicesTable.customerName, `%${search}%`)
+      )
+    );
+  }
+
+  if (status) {
+    conditions.push(eq(invoicesTable.status, status));
+  }
+
+  if (dateFrom) {
+    conditions.push(gte(invoicesTable.date, dateFrom));
+  }
+
+  if (dateTo) {
+    conditions.push(lte(invoicesTable.date, dateTo));
+  }
+
+  let invoices;
+  if (conditions.length > 0) {
     invoices = await db
       .select()
       .from(invoicesTable)
-      .where(
-        or(
-          like(invoicesTable.invoiceNumber, `%${search}%`),
-          like(invoicesTable.customerName, `%${search}%`)
-        )
-      )
+      .where(and(...conditions))
       .orderBy(desc(invoicesTable.createdAt));
   } else {
     invoices = await db.select().from(invoicesTable).orderBy(desc(invoicesTable.createdAt));
