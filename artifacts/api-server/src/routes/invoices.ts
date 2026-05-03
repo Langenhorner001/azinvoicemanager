@@ -25,21 +25,19 @@ function computeTotals(items: { qty: number; price: number; discount: number }[]
 }
 
 async function getInvoiceWithItems(id: number) {
-  const invoice = await db.query.invoicesTable.findFirst({
-    where: eq(invoicesTable.id, id),
-    with: { items: true },
-  });
+  const [invoice] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
   if (!invoice) return null;
+  const rawItems = await db.select().from(invoiceItemsTable).where(eq(invoiceItemsTable.invoiceId, id));
   return {
     ...invoice,
-    subtotal: parseFloat(invoice.subtotal as string),
-    grandTotal: parseFloat(invoice.grandTotal as string),
-    items: invoice.items.map((item) => ({
+    subtotal: parseFloat(String(invoice.subtotal)),
+    grandTotal: parseFloat(String(invoice.grandTotal)),
+    items: rawItems.map((item) => ({
       ...item,
-      qty: parseFloat(item.qty as string),
-      price: parseFloat(item.price as string),
-      discount: parseFloat(item.discount as string),
-      total: parseFloat(item.total as string),
+      qty: parseFloat(String(item.qty)),
+      price: parseFloat(String(item.price)),
+      discount: parseFloat(String(item.discount)),
+      total: parseFloat(String(item.total)),
     })),
   };
 }
@@ -99,7 +97,7 @@ router.get("/invoices", async (req, res) => {
 router.post("/invoices", async (req, res) => {
   const { invoiceNumber, date, customerName, customerAddress, isDraft, items } = req.body;
 
-  if (!invoiceNumber || !date || !customerName) {
+  if (!invoiceNumber || !date) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }

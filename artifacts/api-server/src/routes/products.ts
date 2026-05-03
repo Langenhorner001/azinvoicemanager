@@ -5,9 +5,13 @@ import { eq } from "drizzle-orm";
 
 const router = Router();
 
+function serializeProduct(product: { id: number; name: string; defaultPrice: string | number; createdAt: Date }) {
+  return { ...product, defaultPrice: parseFloat(String(product.defaultPrice)) };
+}
+
 router.get("/products", async (_req, res) => {
   const products = await db.select().from(productsTable).orderBy(productsTable.createdAt);
-  res.json(products);
+  res.json(products.map(serializeProduct));
 });
 
 router.post("/products", async (req, res) => {
@@ -17,7 +21,7 @@ router.post("/products", async (req, res) => {
     return;
   }
   const [product] = await db.insert(productsTable).values(parsed.data).returning();
-  res.status(201).json(product);
+  res.status(201).json(serializeProduct(product));
 });
 
 router.put("/products/:id", async (req, res) => {
@@ -32,7 +36,7 @@ router.put("/products/:id", async (req, res) => {
     res.status(404).json({ error: "Product not found" });
     return;
   }
-  res.json(product);
+  res.json(serializeProduct(product));
 });
 
 router.delete("/products/:id", async (req, res) => {

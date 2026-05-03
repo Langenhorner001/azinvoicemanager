@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "wouter";
-import { Plus, Trash2, ChevronDown, Printer, Download, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Printer, Download, ArrowLeft, Save } from "lucide-react";
 import {
   useGetNextInvoiceNumber,
   useGetInvoice,
@@ -77,7 +77,13 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0 },
   ]);
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
+
+  // Auto-save draft state
+  const [draftId, setDraftId] = useState<number | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialized = useRef(false);
+  const isFirstLoad = useRef(true);
 
   // API data
   const { data: nextNumber, isLoading: loadingNextNum } = useGetNextInvoiceNumber({
@@ -96,25 +102,15 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     mutation: {
       onSuccess: (inv) => {
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
-        toast({ title: "Invoice saved", description: `${inv.invoiceNumber} has been saved.` });
-        navigate("/invoices");
-      },
-      onError: () => {
-        toast({ title: "Error", description: "Failed to save invoice.", variant: "destructive" });
+        return inv;
       },
     },
   });
 
   const updateMutation = useUpdateInvoice({
     mutation: {
-      onSuccess: (inv) => {
+      onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
-        if (id) queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(id) });
-        toast({ title: "Invoice updated", description: `${inv.invoiceNumber} has been updated.` });
-        navigate("/invoices");
-      },
-      onError: () => {
-        toast({ title: "Error", description: "Failed to update invoice.", variant: "destructive" });
       },
     },
   });
@@ -149,21 +145,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     }
   }, [nextNumber, mode, invoiceNumber]);
 
-  function addItem() {
-    setItems((prev) => [
-      ...prev,
-      { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0 },
-    ]);
-  }
-
-  function removeItem(key: string) {
-    setItems((prev) => prev.filter((i) => i.key !== key));
-  }
-
-  function updateItem(key: string, patch: Partial<ItemRow>) {
-    setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
-  }
-
+  // Build payload
   function buildPayload(isDraft: boolean) {
     return {
       invoiceNumber,
@@ -180,16 +162,117 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
     };
   }
 
+  // Debounced auto-save as draft (fires 1.5s after last change)
+  function scheduleAutoSave() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      performAutoSave();
+    }, 1500);
+  }
+
+  function performAutoSave() {
+    if (!invoiceNumber.trim() || !date || !customerName.trim()) return;
+    setAutoSaveStatus("saving");
+    const payload = buildPayload(true);
+
+    if (mode === "edit" && id) {
+      updateMutation.mutate(
+        { id, data: payload },
+        {
+          onSuccess: () => setAutoSaveStatus("saved"),
+          onError: () => setAutoSaveStatus("idle"),
+        }
+      );
+    } else if (draftId) {
+      updateMutation.mutate(
+        { id: draftId, data: payload },
+        {
+          onSuccess: () => setAutoSaveStatus("saved"),
+          onError: () => setAutoSaveStatus("idle"),
+        }
+      );
+    } else {
+      createMutation.mutate(
+        { data: payload },
+        {
+          onSuccess: (inv) => {
+            setDraftId(inv.id);
+            setAutoSaveStatus("saved");
+            queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
+          },
+          onError: () => setAutoSaveStatus("idle"),
+        }
+      );
+    }
+  }
+
+  // Trigger auto-save whenever form changes (skip on initial render / load)
+  useEffect(() => {
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
+    if (!initialized.current && mode === "edit") return;
+    setAutoSaveStatus("idle");
+    scheduleAutoSave();
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceNumber, date, customerName, customerAddress, items]);
+
+  function addItem() {
+    setItems((prev) => [
+      ...prev,
+      { key: makeKey(), itemName: "", qty: 1, price: 0, discountEnabled: false, discount: 0 },
+    ]);
+  }
+
+  function removeItem(key: string) {
+    setItems((prev) => prev.filter((i) => i.key !== key));
+  }
+
+  function updateItem(key: string, patch: Partial<ItemRow>) {
+    setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+  }
+
   function handleSave(isDraft: boolean) {
     if (!invoiceNumber.trim() || !date || !customerName.trim()) {
       toast({ title: "Missing fields", description: "Invoice number, date and customer name are required.", variant: "destructive" });
       return;
     }
     const payload = buildPayload(isDraft);
-    if (mode === "edit" && id) {
-      updateMutation.mutate({ id, data: payload });
+    const targetId = mode === "edit" ? id : draftId;
+
+    if (targetId) {
+      updateMutation.mutate(
+        { id: targetId, data: payload },
+        {
+          onSuccess: (inv) => {
+            queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
+            if (id) queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(id) });
+            toast({ title: isDraft ? "Draft saved" : "Invoice saved", description: `${inv.invoiceNumber} has been ${isDraft ? "saved as draft" : "saved"}.` });
+            navigate("/invoices");
+          },
+          onError: () => {
+            toast({ title: "Error", description: "Failed to save invoice.", variant: "destructive" });
+          },
+        }
+      );
     } else {
-      createMutation.mutate({ data: payload });
+      createMutation.mutate(
+        { data: payload },
+        {
+          onSuccess: (inv) => {
+            queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
+            toast({ title: isDraft ? "Draft saved" : "Invoice saved", description: `${inv.invoiceNumber} has been ${isDraft ? "saved as draft" : "saved"}.` });
+            navigate("/invoices");
+          },
+          onError: () => {
+            toast({ title: "Error", description: "Failed to save invoice.", variant: "destructive" });
+          },
+        }
+      );
     }
   }
 
@@ -198,7 +281,20 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
   }
 
   function handleDownloadPDF() {
-    window.print();
+    // Open a print dialog focused on the invoice preview using print-specific CSS
+    const previewEl = document.getElementById("invoice-preview-panel");
+    if (!previewEl) { window.print(); return; }
+    const printWindow = window.open("", "_blank", "width=800,height=1000");
+    if (!printWindow) { window.print(); return; }
+    const styles = Array.from(document.styleSheets)
+      .flatMap((sheet) => {
+        try { return Array.from(sheet.cssRules).map((r) => r.cssText); } catch { return []; }
+      })
+      .join("\n");
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Invoice</title><style>${styles}\nbody{margin:0;background:white;}</style></head><body>${previewEl.innerHTML}</body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   }
 
   const subtotal = items.reduce((acc, item) => acc + item.qty * item.price, 0);
@@ -216,7 +312,7 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
 
   return (
     <Layout>
-      <div className="flex h-[calc(100vh-0px)] lg:h-screen overflow-hidden flex-col">
+      <div className="flex h-screen overflow-hidden flex-col">
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -230,6 +326,11 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
             <h1 className="text-sm font-semibold text-foreground">
               {mode === "new" ? "New Invoice" : `Edit ${invoiceNumber || "Invoice"}`}
             </h1>
+            {/* Auto-save indicator */}
+            <span className="text-xs text-muted-foreground">
+              {autoSaveStatus === "saving" && "Saving draft..."}
+              {autoSaveStatus === "saved" && "Draft saved"}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -255,10 +356,12 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
             <Button
               variant="outline"
               size="sm"
+              className="gap-1.5"
               onClick={() => handleSave(true)}
               disabled={isPending}
               data-testid="button-save-draft"
             >
+              <Save className="w-3.5 h-3.5" />
               {isPending ? "Saving..." : "Save Draft"}
             </Button>
             <Button
@@ -311,7 +414,6 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
               <div>
                 <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Customer</h2>
                 <div className="space-y-3">
-                  {/* Customer picker */}
                   {customers.length > 0 && (
                     <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
                       <PopoverTrigger asChild>
@@ -427,13 +529,15 @@ export default function InvoiceEditorPage({ mode }: { mode: "new" | "edit" }) {
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Preview</span>
                 <span className="text-xs text-muted-foreground">A4 Format</span>
               </div>
-              <InvoicePreview
-                invoiceNumber={invoiceNumber}
-                date={date}
-                customerName={customerName}
-                customerAddress={customerAddress}
-                items={previewItems}
-              />
+              <div id="invoice-preview-panel">
+                <InvoicePreview
+                  invoiceNumber={invoiceNumber}
+                  date={date}
+                  customerName={customerName}
+                  customerAddress={customerAddress}
+                  items={previewItems}
+                />
+              </div>
             </div>
           </div>
         </div>
