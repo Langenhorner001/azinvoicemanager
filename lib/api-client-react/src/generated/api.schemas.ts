@@ -8,3 +8,81 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface NextInvoiceNumber {
+  invoiceNumber: string;
+}
+
+export interface InvoiceItem {
+  id: number;
+  invoiceId: number;
+  itemName: string;
+  qty: number;
+  price: number;
+  discount: number;
+  total: number;
+}
+
+export interface InvoiceItemInput {
+  itemName: string;
+  qty: number;
+  price: number;
+  discount: number;
+}
+
+export interface Invoice {
+  id: number;
+  invoiceNumber: string;
+  date: string;
+  customerName: string;
+  customerAddress: string;
+  subtotal: number;
+  grandTotal: number;
+  isDraft: boolean;
+  createdAt: string;
+  items: InvoiceItem[];
+}
+
+export interface CreateInvoiceBody {
+  invoiceNumber: string;
+  date: string;
+  customerName: string;
+  customerAddress: string;
+  isDraft: boolean;
+  items: InvoiceItemInput[];
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  address: string;
+  createdAt: string;
+}
+
+export interface CreateCustomerBody {
+  name: string;
+  address: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  defaultPrice: number;
+  createdAt: string;
+}
+
+export interface CreateProductBody {
+  name: string;
+  defaultPrice: number;
+}
+
+export type ListInvoicesParams = {
+  /**
+   * Search by invoice number or customer name
+   */
+  search?: string;
+};

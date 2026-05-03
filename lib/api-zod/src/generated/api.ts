@@ -14,3 +14,237 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary List invoices
+ */
+export const ListInvoicesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .optional()
+    .describe("Search by invoice number or customer name"),
+});
+
+export const ListInvoicesResponseItem = zod.object({
+  id: zod.number(),
+  invoiceNumber: zod.string(),
+  date: zod.string(),
+  customerName: zod.string(),
+  customerAddress: zod.string(),
+  subtotal: zod.number(),
+  grandTotal: zod.number(),
+  isDraft: zod.boolean(),
+  createdAt: zod.string(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      invoiceId: zod.number(),
+      itemName: zod.string(),
+      qty: zod.number(),
+      price: zod.number(),
+      discount: zod.number(),
+      total: zod.number(),
+    }),
+  ),
+});
+export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem);
+
+/**
+ * @summary Create invoice
+ */
+export const CreateInvoiceBody = zod.object({
+  invoiceNumber: zod.string(),
+  date: zod.string(),
+  customerName: zod.string(),
+  customerAddress: zod.string(),
+  isDraft: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      itemName: zod.string(),
+      qty: zod.number(),
+      price: zod.number(),
+      discount: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * Returns the next auto-generated invoice number in AZ-YYMM-### format
+ * @summary Get next invoice number
+ */
+export const GetNextInvoiceNumberResponse = zod.object({
+  invoiceNumber: zod.string(),
+});
+
+/**
+ * @summary Get invoice by ID
+ */
+export const GetInvoiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetInvoiceResponse = zod.object({
+  id: zod.number(),
+  invoiceNumber: zod.string(),
+  date: zod.string(),
+  customerName: zod.string(),
+  customerAddress: zod.string(),
+  subtotal: zod.number(),
+  grandTotal: zod.number(),
+  isDraft: zod.boolean(),
+  createdAt: zod.string(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      invoiceId: zod.number(),
+      itemName: zod.string(),
+      qty: zod.number(),
+      price: zod.number(),
+      discount: zod.number(),
+      total: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update invoice
+ */
+export const UpdateInvoiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateInvoiceBody = zod.object({
+  invoiceNumber: zod.string(),
+  date: zod.string(),
+  customerName: zod.string(),
+  customerAddress: zod.string(),
+  isDraft: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      itemName: zod.string(),
+      qty: zod.number(),
+      price: zod.number(),
+      discount: zod.number(),
+    }),
+  ),
+});
+
+export const UpdateInvoiceResponse = zod.object({
+  id: zod.number(),
+  invoiceNumber: zod.string(),
+  date: zod.string(),
+  customerName: zod.string(),
+  customerAddress: zod.string(),
+  subtotal: zod.number(),
+  grandTotal: zod.number(),
+  isDraft: zod.boolean(),
+  createdAt: zod.string(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      invoiceId: zod.number(),
+      itemName: zod.string(),
+      qty: zod.number(),
+      price: zod.number(),
+      discount: zod.number(),
+      total: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Delete invoice
+ */
+export const DeleteInvoiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List customers
+ */
+export const ListCustomersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  address: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListCustomersResponse = zod.array(ListCustomersResponseItem);
+
+/**
+ * @summary Create customer
+ */
+export const CreateCustomerBody = zod.object({
+  name: zod.string(),
+  address: zod.string(),
+});
+
+/**
+ * @summary Update customer
+ */
+export const UpdateCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCustomerBody = zod.object({
+  name: zod.string(),
+  address: zod.string(),
+});
+
+export const UpdateCustomerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  address: zod.string(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Delete customer
+ */
+export const DeleteCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List products
+ */
+export const ListProductsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  defaultPrice: zod.number(),
+  createdAt: zod.string(),
+});
+export const ListProductsResponse = zod.array(ListProductsResponseItem);
+
+/**
+ * @summary Create product
+ */
+export const CreateProductBody = zod.object({
+  name: zod.string(),
+  defaultPrice: zod.number(),
+});
+
+/**
+ * @summary Update product
+ */
+export const UpdateProductParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateProductBody = zod.object({
+  name: zod.string(),
+  defaultPrice: zod.number(),
+});
+
+export const UpdateProductResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  defaultPrice: zod.number(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Delete product
+ */
+export const DeleteProductParams = zod.object({
+  id: zod.coerce.number(),
+});
