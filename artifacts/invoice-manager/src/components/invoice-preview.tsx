@@ -1,4 +1,7 @@
 import { cn } from "@/lib/utils";
+import azLogo from "@assets/image_1777810002630.png";
+import invoiceText from "@assets/image_1777810021662.png";
+import thankYou from "@assets/image_1777810010321.png";
 
 interface InvoiceItem {
   itemName: string;
@@ -80,33 +83,17 @@ export function InvoicePreview({
       data-testid="invoice-preview"
     >
       {/* Header: AZ logo + Invoice title */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div
-          style={{
-            fontFamily: "'DM Serif Display', 'Playfair Display', Georgia, serif",
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: "78px",
-            lineHeight: 0.9,
-            letterSpacing: "-0.08em",
-            color: "#000",
-          }}
-        >
-          AZ
-        </div>
-        <div
-          style={{
-            fontFamily: "'DM Serif Display', 'Playfair Display', Georgia, serif",
-            fontWeight: 400,
-            fontStyle: "italic",
-            fontSize: "52px",
-            lineHeight: 0.9,
-            color: "#000",
-            letterSpacing: "-0.03em",
-          }}
-        >
-          Invoice
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <img
+          src={azLogo}
+          alt="AZ"
+          style={{ height: "78px", width: "auto", objectFit: "contain" }}
+        />
+        <img
+          src={invoiceText}
+          alt="Invoice"
+          style={{ height: "56px", width: "auto", objectFit: "contain" }}
+        />
       </div>
 
       {/* Billed to + Invoice No / Date */}
@@ -295,18 +282,11 @@ export function InvoicePreview({
           alignItems: "flex-end",
         }}
       >
-        <div
-          style={{
-            fontFamily: "'Sacramento', 'Dancing Script', cursive",
-            fontSize: "84px",
-            color: "#111",
-            lineHeight: 0.85,
-            fontWeight: 400,
-            letterSpacing: "0.01em",
-          }}
-        >
-          Thank you
-        </div>
+        <img
+          src={thankYou}
+          alt="Thank you"
+          style={{ height: "120px", width: "auto", objectFit: "contain" }}
+        />
         <div style={{ textAlign: "right", lineHeight: 1.7, fontSize: "12px" }}>
           <div style={{ fontWeight: 700, color: "#000", letterSpacing: "0.04em" }}>
             AZ DISTRIBUTION
