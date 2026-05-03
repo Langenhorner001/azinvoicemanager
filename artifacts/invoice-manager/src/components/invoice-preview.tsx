@@ -81,12 +81,12 @@ export function InvoicePreview({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div
           style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
+            fontFamily: "'DM Serif Display', 'Playfair Display', Georgia, serif",
             fontStyle: "italic",
-            fontWeight: 900,
-            fontSize: "64px",
-            lineHeight: 1,
-            letterSpacing: "-0.06em",
+            fontWeight: 400,
+            fontSize: "78px",
+            lineHeight: 0.9,
+            letterSpacing: "-0.08em",
             color: "#000",
           }}
         >
@@ -94,13 +94,13 @@ export function InvoicePreview({
         </div>
         <div
           style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontWeight: 900,
+            fontFamily: "'DM Serif Display', 'Playfair Display', Georgia, serif",
+            fontWeight: 400,
             fontStyle: "italic",
-            fontSize: "44px",
-            lineHeight: 1,
+            fontSize: "52px",
+            lineHeight: 0.9,
             color: "#000",
-            letterSpacing: "-0.02em",
+            letterSpacing: "-0.03em",
           }}
         >
           Invoice
@@ -257,9 +257,10 @@ export function InvoicePreview({
           <div
             style={{
               textAlign: "center",
-              fontWeight: 700,
-              fontSize: "16px",
-              fontFamily: "'Playfair Display', Georgia, serif",
+              fontWeight: 400,
+              fontSize: "18px",
+              fontFamily: "'DM Serif Display', 'Playfair Display', Georgia, serif",
+              fontStyle: "italic",
             }}
           >
             Total
@@ -267,10 +268,10 @@ export function InvoicePreview({
           <div
             style={{
               textAlign: "right",
-              fontWeight: 700,
-              fontSize: "16px",
+              fontWeight: 400,
+              fontSize: "18px",
               paddingRight: "8px",
-              fontFamily: "'Playfair Display', Georgia, serif",
+              fontFamily: "'DM Serif Display', 'Playfair Display', Georgia, serif",
             }}
           >
             {formatNum(Math.round(grandTotal))}
@@ -290,13 +291,12 @@ export function InvoicePreview({
       >
         <div
           style={{
-            fontFamily: "'Dancing Script', cursive",
-            fontSize: "72px",
+            fontFamily: "'Sacramento', 'Dancing Script', cursive",
+            fontSize: "84px",
             color: "#111",
-            lineHeight: 0.9,
-            fontWeight: 500,
-            transform: "rotate(-2deg)",
-            transformOrigin: "left bottom",
+            lineHeight: 0.85,
+            fontWeight: 400,
+            letterSpacing: "0.01em",
           }}
         >
           Thank you
