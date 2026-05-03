@@ -347,6 +347,10 @@ components:
       required:
         - invoiceNumber
 
+    DiscountType:
+      type: string
+      enum: [percent, amount]
+
     InvoiceItem:
       type: object
       properties:
@@ -362,6 +366,8 @@ components:
           type: number
         discount:
           type: number
+        discountType:
+          $ref: '#/components/schemas/DiscountType'
         total:
           type: number
       required:
@@ -371,6 +377,7 @@ components:
         - qty
         - price
         - discount
+        - discountType
         - total
 
     InvoiceItemInput:
@@ -384,6 +391,8 @@ components:
           type: number
         discount:
           type: number
+        discountType:
+          $ref: '#/components/schemas/DiscountType'
       required:
         - itemName
         - qty

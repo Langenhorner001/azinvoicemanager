@@ -25,8 +25,12 @@ export const invoiceItemsTable = pgTable("invoice_items", {
   qty: numeric("qty", { precision: 12, scale: 2 }).notNull().default("1"),
   price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
   discount: numeric("discount", { precision: 12, scale: 2 }).notNull().default("0"),
+  discountType: text("discount_type").notNull().default("percent"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull().default("0"),
 });
+
+export const discountTypeValues = ["percent", "amount"] as const;
+export type DiscountType = (typeof discountTypeValues)[number];
 
 export const insertInvoiceSchema = createInsertSchema(invoicesTable).omit({ id: true, createdAt: true });
 export const insertInvoiceItemSchema = createInsertSchema(invoiceItemsTable).omit({ id: true });

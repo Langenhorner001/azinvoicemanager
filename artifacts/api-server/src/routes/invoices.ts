@@ -13,13 +13,22 @@ function generateInvoiceNumber(count: number): string {
   return `AZ-${yy}${mm}-${seq}`;
 }
 
-function computeTotals(items: { qty: number; price: number; discount: number }[]) {
+type ParsedItem = { qty: number; price: number; discount: number; discountType: string };
+
+function computeLineTotal(item: ParsedItem): number {
+  const gross = item.qty * item.price;
+  if (item.discountType === "amount") {
+    return Math.max(0, gross - item.discount);
+  }
+  return gross * (1 - item.discount / 100);
+}
+
+function computeTotals(items: ParsedItem[]) {
   let subtotal = 0;
   let grandTotal = 0;
   for (const item of items) {
-    const lineTotal = item.qty * item.price * (1 - item.discount / 100);
     subtotal += item.qty * item.price;
-    grandTotal += lineTotal;
+    grandTotal += computeLineTotal(item);
   }
   return { subtotal, grandTotal };
 }
@@ -37,6 +46,7 @@ async function getInvoiceWithItems(id: number) {
       qty: parseFloat(String(item.qty)),
       price: parseFloat(String(item.price)),
       discount: parseFloat(String(item.discount)),
+      discountType: (item.discountType ?? "percent") as "percent" | "amount",
       total: parseFloat(String(item.total)),
     })),
   };
@@ -85,6 +95,7 @@ router.get("/invoices", async (req, res) => {
           qty: parseFloat(item.qty as string),
           price: parseFloat(item.price as string),
           discount: parseFloat(item.discount as string),
+          discountType: (item.discountType ?? "percent") as "percent" | "amount",
           total: parseFloat(item.total as string),
         })),
       };
@@ -102,11 +113,12 @@ router.post("/invoices", async (req, res) => {
     return;
   }
 
-  const parsedItems = (items ?? []).map((item: { itemName: string; qty: number; price: number; discount: number }) => ({
+  const parsedItems: (ParsedItem & { itemName: string })[] = (items ?? []).map((item: { itemName: string; qty: number; price: number; discount: number; discountType?: string }) => ({
     itemName: item.itemName,
     qty: item.qty,
     price: item.price,
     discount: item.discount,
+    discountType: item.discountType === "amount" ? "amount" : "percent",
   }));
 
   const { subtotal, grandTotal } = computeTotals(parsedItems);
@@ -129,13 +141,14 @@ router.post("/invoices", async (req, res) => {
 
   if (parsedItems.length > 0) {
     await db.insert(invoiceItemsTable).values(
-      parsedItems.map((item: { itemName: string; qty: number; price: number; discount: number }) => ({
+      parsedItems.map((item) => ({
         invoiceId: invoice.id,
         itemName: item.itemName,
         qty: String(item.qty),
         price: String(item.price),
         discount: String(item.discount),
-        total: String(item.qty * item.price * (1 - item.discount / 100)),
+        discountType: item.discountType,
+        total: String(computeLineTotal(item)),
       }))
     );
   }
@@ -164,11 +177,12 @@ router.put("/invoices/:id", async (req, res) => {
     return;
   }
 
-  const parsedItems = (items ?? []).map((item: { itemName: string; qty: number; price: number; discount: number }) => ({
+  const parsedItems: (ParsedItem & { itemName: string })[] = (items ?? []).map((item: { itemName: string; qty: number; price: number; discount: number; discountType?: string }) => ({
     itemName: item.itemName,
     qty: item.qty,
     price: item.price,
     discount: item.discount,
+    discountType: item.discountType === "amount" ? "amount" : "percent",
   }));
 
   const { subtotal, grandTotal } = computeTotals(parsedItems);
@@ -194,13 +208,14 @@ router.put("/invoices/:id", async (req, res) => {
 
   if (parsedItems.length > 0) {
     await db.insert(invoiceItemsTable).values(
-      parsedItems.map((item: { itemName: string; qty: number; price: number; discount: number }) => ({
+      parsedItems.map((item) => ({
         invoiceId: id,
         itemName: item.itemName,
         qty: String(item.qty),
         price: String(item.price),
         discount: String(item.discount),
-        total: String(item.qty * item.price * (1 - item.discount / 100)),
+        discountType: item.discountType,
+        total: String(computeLineTotal(item)),
       }))
     );
   }

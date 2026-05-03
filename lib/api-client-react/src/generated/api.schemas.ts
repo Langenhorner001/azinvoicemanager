@@ -17,6 +17,13 @@ export interface NextInvoiceNumber {
   invoiceNumber: string;
 }
 
+export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType];
+
+export const DiscountType = {
+  percent: "percent",
+  amount: "amount",
+} as const;
+
 export interface InvoiceItem {
   id: number;
   invoiceId: number;
@@ -24,6 +31,7 @@ export interface InvoiceItem {
   qty: number;
   price: number;
   discount: number;
+  discountType: DiscountType;
   total: number;
 }
 
@@ -32,6 +40,7 @@ export interface InvoiceItemInput {
   qty: number;
   price: number;
   discount: number;
+  discountType?: DiscountType;
 }
 
 export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
