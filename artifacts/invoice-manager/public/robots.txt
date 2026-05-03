@@ -1,0 +1,49 @@
+# AZ DISTRIBUTION — Invoice Manager
+# https://az-distribution.replit.app
+# Author: sonic
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /*.json$
+
+# Major Search Engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# Block AI training crawlers (optional — protect your content)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+# Sitemap
+Sitemap: https://az-distribution.replit.app/sitemap.xml
+
+# Crawl-delay for respectful indexing
+Crawl-delay: 1

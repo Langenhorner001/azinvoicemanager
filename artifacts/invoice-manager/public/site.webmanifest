@@ -1,0 +1,51 @@
+{
+  "name": "AZ DISTRIBUTION — Invoice Manager",
+  "short_name": "AZ Invoice",
+  "description": "Professional invoice management software for AZ DISTRIBUTION MIRPUR. Create, print and download invoices in PKR with live A4 preview.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "lang": "en-PK",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Invoice",
+      "short_name": "New",
+      "description": "Create a new invoice",
+      "url": "/invoices/new",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Customers",
+      "short_name": "Customers",
+      "description": "Manage customers",
+      "url": "/customers",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Products",
+      "short_name": "Products",
+      "description": "Manage products",
+      "url": "/products",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
