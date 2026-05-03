@@ -1,169 +1,169 @@
 # AZ DISTRIBUTION — Invoice Manager
-### Complete User Guide | مکمل راہنما
+### Mukammal Guide (Complete User Guide)
 
-**Developed by:** sonic  
-**Version:** 1.0.0  
-**Platform:** Web Application (React + Node.js)  
+**Developed by:** sonic
+**Version:** 1.0.0
+**Platform:** Web Application (React + Node.js)
 **Contact:** +92 318 4396075 | Mirpur Azad Kashmir, 12130
 
 ---
 
-## ⚠️ DISCLAIMER | اہم اطلاع
+## ⚠️ DISCLAIMER — Zaroori Itlaa
 
-> **یہ سافٹ ویئر صرف جائز تجارتی مقاصد کے لیے بنایا گیا ہے۔**
+> **Yeh software sirf jaiz (legal) tijaarti maqasid ke liye banaya gaya hai.**
 >
-> اس سافٹ ویئر کے ذریعے کسی بھی غیر قانونی سرگرمی — جیسے جعلی انوائس بنانا، ٹیکس فراڈ، دھوکہ دہی، یا کسی بھی قسم کا مالیاتی جرم — کی صورت میں **author "sonic" کسی بھی قانونی یا مالی ذمہ داری سے مکمل طور پر بری الذمہ ہے۔**
+> Is software ke zariye agar koi ghair-qanooni kaam kiya jaye — jaise nakli (fake) invoice banana, tax fraud, dhokha dahi, ya kisi bhi qisam ka maali jurm — to **author "sonic" iski koi qanooni ya maali zimmedari nahi lega.**
 >
-> استعمال کنندہ خود اپنے تمام اعمال کا ذمہ دار ہوگا۔ پاکستان کے قوانین کے تحت جعلسازی ایک سنگین جرم ہے۔
+> Use karne wala khud apne tamam aamaal ka zimmedar hoga. Pakistan ke qanoon ke mutabiq jaalsazi (forgery) ek sangeen jurm hai.
 
 **THIS SOFTWARE IS PROVIDED "AS IS". THE AUTHOR "sonic" SHALL NOT BE LIABLE FOR ANY ILLEGAL, FRAUDULENT, OR UNAUTHORIZED USE OF THIS SOFTWARE. THE USER ASSUMES FULL RESPONSIBILITY FOR ALL ACTIONS PERFORMED USING THIS TOOL. USE AT YOUR OWN RISK.**
 
 ---
 
-## 📋 پروجیکٹ کیا ہے؟ | What is this Project?
+## 📋 Yeh Project Kya Hai?
 
-**AZ DISTRIBUTION Invoice Manager** ایک مکمل ویب بیسڈ انوائس مینجمنٹ سسٹم ہے جو خاص طور پر **AZ DISTRIBUTION MIRPUR** کے لیے بنایا گیا ہے۔ یہ ایک مقامی تجارتی کاروبار Mirpur Azad Kashmir, Pakistan میں واقع ہے۔
+**AZ DISTRIBUTION Invoice Manager** ek mukammal web-based invoice management system hai jo khaas tor par **AZ DISTRIBUTION MIRPUR** ke liye banaya gaya hai. Yeh aik local business hai jo Mirpur Azad Kashmir, Pakistan mein hai.
 
-یہ ایپلیکیشن کاروباری مالکان کو اپنے گاہکوں کو پیشہ ورانہ انوائس بنانے، محفوظ کرنے، اور پرنٹ کرنے میں مدد دیتی ہے — بغیر کسی کاغذ یا الگ سافٹ ویئر کے۔
-
----
-
-## ✅ خصوصیات | Features
-
-| خصوصیت | تفصیل |
-|--------|--------|
-| **انوائس بنانا** | نیا انوائس بنائیں — نمبر خودبخود (AZ-YYMM-###) |
-| **لائیو پریویو** | جیسے فارم بھریں، دائیں طرف A4 انوائس خودبخود اپڈیٹ ہو |
-| **گاہک مینجمنٹ** | گاہکوں کی فہرست — شامل کریں، تبدیل کریں، حذف کریں |
-| **پروڈکٹ مینجمنٹ** | اشیاء کی فہرست — نام اور قیمت محفوظ کریں |
-| **ڈسکاؤنٹ** | فی آئٹم ڈسکاؤنٹ (فیصد میں) — آن/آف سوئچ |
-| **ڈرافٹ** | انوائس ڈرافٹ کے طور پر محفوظ کریں |
-| **آٹو سیو** | ٹائپ کرتے ہی ڈرافٹ خودبخود محفوظ ہوتا ہے |
-| **سرچ** | انوائس نمبر یا گاہک کے نام سے تلاش |
-| **پرنٹ / PDF** | انوائس پرنٹ کریں یا PDF بنائیں |
-| **ڈارک موڈ** | آنکھوں کے لیے آرام دہ ڈارک تھیم |
-| **موبائل فرینڈلی** | موبائل پر بھی بالکل ٹھیک چلتا ہے |
+Yeh application kaarobari (business) malikan ko apne customers ke liye professional invoice banane, save karne, aur print karne mein madad deti hai — bina kisi kaaghaz ya alag software ke.
 
 ---
 
-## 🚀 استعمال کا طریقہ | How to Use
+## ✅ Khasusiyat (Features)
 
-### 1. پہلا قدم — گاہک شامل کریں
-1. بائیں طرف سائیڈبار سے **Customers** پر کلک کریں
-2. **"Add Customer"** بٹن دبائیں
-3. گاہک کا نام اور پتہ لکھیں
-4. **"Add Customer"** پر کلک کریں — گاہک محفوظ ہوگیا
-
-### 2. دوسرا قدم — پروڈکٹ شامل کریں
-1. سائیڈبار سے **Products** پر کلک کریں
-2. **"Add Product"** بٹن دبائیں
-3. پروڈکٹ کا نام اور ڈیفالٹ قیمت لکھیں
-4. **"Add Product"** پر کلک کریں — پروڈکٹ محفوظ ہوگئی
-
-### 3. تیسرا قدم — نیا انوائس بنائیں
-1. سائیڈبار سے **Invoices** پر کلک کریں
-2. اوپر دائیں طرف **"New Invoice"** بٹن دبائیں
-3. انوائس نمبر خودبخود آئے گا (مثلاً AZ-2605-001)
-4. تاریخ چنیں
-5. گاہک منتخب کریں یا نام خود لکھیں
-6. آئٹم شامل کریں:
-   - **Item Name**: پروڈکٹ منتخب کریں یا خود لکھیں
-   - **Qty**: مقدار لکھیں
-   - **Price**: قیمت لکھیں (Rs.)
-   - **Discount**: اگر ڈسکاؤنٹ دینا ہو تو سوئچ آن کریں اور فیصد لکھیں
-7. دائیں طرف لائیو A4 پریویو دیکھیں
-8. **"Save Invoice"** — فائنل انوائس محفوظ کریں  
-   یا **"Save Draft"** — بعد میں مکمل کریں
-
-### 4. انوائس پرنٹ / PDF کریں
-- انوائس کھولیں یا بنائیں
-- اوپر **"Print"** بٹن دبائیں — صرف انوائس پرنٹ ہوگا (سائیڈبار نہیں)
-- **"PDF"** بٹن دبائیں — PDF محفوظ کرنے کا آپشن آئے گا
-
-### 5. انوائس تلاش کریں
-- Invoices صفحے پر سرچ باکس میں انوائس نمبر یا گاہک کا نام لکھیں
-- نتائج فوراً فلٹر ہوجائیں گے
-
-### 6. انوائس حذف کریں
-- انوائس کی قطار پر ماؤس لے جائیں
-- سرخ **Delete** بٹن دبائیں
-- تصدیق کریں — انوائس حذف ہوگئی
-
-### 7. ڈارک موڈ
-- سائیڈبار کے نیچے **"Dark Mode"** بٹن دبائیں
-- دوبارہ دبائیں تو لائٹ موڈ میں آجائے گا
-- ترجیح خودبخود محفوظ رہتی ہے
+| Feature | Tafseel |
+|---------|---------|
+| **Invoice Banana** | Naya invoice banayein — number khud-ba-khud (AZ-YYMM-###) |
+| **Live Preview** | Jaise form bharein, dahini taraf A4 invoice khud update ho |
+| **Customer Management** | Customers ki list — add karein, change karein, delete karein |
+| **Product Management** | Items ki list — naam aur qeemat save karein |
+| **Discount** | Har item per discount (% mein) — on/off switch |
+| **Draft** | Invoice ko draft ke tor par save karein |
+| **Auto-Save** | Type karte hi draft khud-ba-khud save hota hai |
+| **Search** | Invoice number ya customer ke naam se talash |
+| **Print / PDF** | Invoice print karein ya PDF banayein |
+| **Dark Mode** | Aankhon ke liye aaraam-deh dark theme |
+| **Mobile Friendly** | Mobile per bhi bilkul theek chalta hai |
 
 ---
 
-## 💡 انوائس نمبر فارمیٹ | Invoice Number Format
+## 🚀 Istemal Ka Tareeqa (How to Use)
+
+### 1. Pehla Qadam — Customer Add Karein
+1. Bayein (left) sidebar se **Customers** par click karein
+2. **"Add Customer"** button dabayein
+3. Customer ka naam aur address likhein
+4. **"Add Customer"** par click karein — customer save ho gaya
+
+### 2. Doosra Qadam — Product Add Karein
+1. Sidebar se **Products** par click karein
+2. **"Add Product"** button dabayein
+3. Product ka naam aur default qeemat likhein
+4. **"Add Product"** par click karein — product save ho gayi
+
+### 3. Teesra Qadam — Naya Invoice Banayein
+1. Sidebar se **Invoices** par click karein
+2. Upar dahini taraf **"New Invoice"** button dabayein
+3. Invoice number khud-ba-khud aayega (jaise AZ-2605-001)
+4. Date select karein
+5. Customer select karein ya naam khud likhein
+6. Item add karein:
+   - **Item Name**: Product select karein ya khud likhein
+   - **Qty**: Tadaad (quantity) likhein
+   - **Price**: Qeemat likhein (Rs.)
+   - **Discount**: Agar discount dena ho to switch on karein aur % likhein
+7. Dahini taraf live A4 preview dekhein
+8. **"Save Invoice"** — final invoice save karein
+   ya **"Save Draft"** — baad mein mukammal karein
+
+### 4. Invoice Print / PDF Karein
+- Invoice kholein ya banayein
+- Upar **"Print"** button dabayein — sirf invoice print hoga (sidebar nahi)
+- **"PDF"** button dabayein — PDF save karne ka option aayega
+
+### 5. Invoice Talash Karein
+- Invoices page par search box mein invoice number ya customer ka naam likhein
+- Nataij (results) foran filter ho jayenge
+
+### 6. Invoice Delete Karein
+- Invoice ki row par mouse le jayein
+- Surkh (red) **Delete** button dabayein
+- Tasdeeq (confirm) karein — invoice delete ho gaya
+
+### 7. Dark Mode
+- Sidebar ke neeche **"Dark Mode"** button dabayein
+- Dobara dabayein to light mode mein aa jayega
+- Tarjeeh (preference) khud-ba-khud save rehti hai
+
+---
+
+## 💡 Invoice Number Format
 
 ```
 AZ - YY MM - ###
 AZ - 26 05 - 001
      ↑  ↑    ↑
-     سال مہینہ  ترتیب نمبر
+     saal  mahina  number
 ```
 
-- ہر مہینے نیا ترتیب شروع ہوتا ہے
-- خودبخود بڑھتا جاتا ہے
-- آپ چاہیں تو خود بھی تبدیل کرسکتے ہیں
+- Har mahine naya silsila shuru hota hai
+- Khud-ba-khud barhta jata hai
+- Aap chahein to khud bhi badal sakte hain
 
 ---
 
-## 🌐 Deploy کرنے کا طریقہ | Deployment Guide
+## 🌐 Deploy Karne Ka Tareeqa
 
-### آپشن 1 — Replit پر Deploy (سب سے آسان)
-1. Replit پر پروجیکٹ کھولیں
-2. اوپر دائیں طرف **"Deploy"** بٹن دبائیں
-3. **"Production Deploy"** منتخب کریں
-4. چند منٹ میں آپ کی ایپ لائیو ہوجائے گی
-5. آپ کو ایک لنک ملے گا جیسے: `https://az-distribution.replit.app`
-6. یہ لنک کسی بھی ڈیوائس پر کھل سکتا ہے
+### Option 1 — Replit Per Deploy (Sab Se Asaan)
+1. Replit per project kholein
+2. Upar dahini taraf **"Deploy"** button dabayein
+3. **"Production Deploy"** select karein
+4. Chand (kuch) minton mein aap ki app live ho jayegi
+5. Aap ko ek link milega jaise: `https://az-distribution.replit.app`
+6. Yeh link kisi bhi device per khul sakta hai
 
-### آپشن 2 — VPS یا اپنے سرور پر
-**ضروریات:**
+### Option 2 — VPS Ya Apne Server Per
+**Zaroriat:**
 - Node.js 20+
-- PostgreSQL ڈیٹابیس
-- پوری fاور pnpm
+- PostgreSQL database
+- pnpm package manager
 
 ```bash
-# 1. پروجیکٹ ڈاؤن لوڈ کریں
+# 1. Project download karein
 git clone <your-repo-url>
 cd az-distribution-invoice-manager
 
-# 2. پیکیجز انسٹال کریں
+# 2. Packages install karein
 pnpm install
 
-# 3. ماحولیاتی متغیرات سیٹ کریں
+# 3. Environment variables set karein
 echo "DATABASE_URL=postgresql://user:password@localhost:5432/az_db" > .env
 
-# 4. ڈیٹابیس سیٹ اپ کریں
+# 4. Database setup karein
 pnpm --filter @workspace/db run push
 
-# 5. API سرور چلائیں
+# 5. API server chalayein
 pnpm --filter @workspace/api-server run dev
 
-# 6. فرنٹ اینڈ چلائیں
+# 6. Frontend chalayein
 pnpm --filter @workspace/invoice-manager run dev
 ```
 
-### آپشن 3 — مقامی استعمال (گھر/دفتر)
-اگر آپ صرف اپنے کمپیوٹر پر چلانا چاہتے ہیں:
-1. Node.js انسٹال کریں: [nodejs.org](https://nodejs.org)
-2. PostgreSQL انسٹال کریں
-3. اوپر دیے گئے کمانڈز چلائیں
-4. `http://localhost:18864` پر ایپ کھلے گی
+### Option 3 — Local Istemal (Ghar/Office)
+Agar aap sirf apne computer per chalana chahte hain:
+1. Node.js install karein: [nodejs.org](https://nodejs.org)
+2. PostgreSQL install karein
+3. Upar diye gaye commands chalayein
+4. `http://localhost:18864` per app khulegi
 
 ---
 
-## 📱 کہاں کہاں چلتا ہے؟ | Compatibility
+## 📱 Kahan Kahan Chalta Hai?
 
-| ڈیوائس | حمایت |
-|--------|--------|
-| کمپیوٹر / لیپ ٹاپ | ✅ مکمل |
-| ٹیبلیٹ | ✅ مکمل |
-| موبائل فون | ✅ مکمل |
+| Device | Support |
+|--------|---------|
+| Computer / Laptop | ✅ Mukammal |
+| Tablet | ✅ Mukammal |
+| Mobile Phone | ✅ Mukammal |
 | Chrome | ✅ |
 | Firefox | ✅ |
 | Safari | ✅ |
@@ -171,119 +171,119 @@ pnpm --filter @workspace/invoice-manager run dev
 
 ---
 
-## ✅ فائدے | Benefits & Advantages
+## ✅ Faiday (Benefits & Advantages)
 
-### کاروباری فائدے
-- **وقت کی بچت** — انوائس منٹوں میں تیار، کاغذ اور قلم کی ضرورت نہیں
-- **پیشہ ورانہ انوائس** — ہر انوائس صاف، پرنٹ کے قابل A4 فارمیٹ میں
-- **غلطی کم** — خودبخود حساب — جمع، ڈسکاؤنٹ، گرینڈ ٹوٹل سب خود سے نکلتا ہے
-- **گاہک کا ریکارڈ** — تمام گاہکوں کی معلومات ایک جگہ محفوظ
-- **پروڈکٹ کیٹلاگ** — اشیاء کی فہرست — بار بار لکھنے کی ضرورت نہیں
-- **انوائس ہسٹری** — پرانے انوائس آسانی سے ڈھونڈیں
-- **ڈرافٹ سسٹم** — ادھورا انوائس محفوظ کریں — بعد میں مکمل کریں
-- **آٹو سیو** — کام ضائع نہیں ہوگا — خودبخود محفوظ ہوتا رہتا ہے
-- **مفت PDF** — الگ سافٹ ویئر کی ضرورت نہیں
-- **ڈارک موڈ** — رات کو کام کریں، آنکھوں کو تکلیف نہیں
+### Kaarobari Faiday
+- **Waqt Ki Bachat** — Invoice minton mein tayyar, kaaghaz aur qalam ki zaroorat nahi
+- **Professional Invoice** — Har invoice saaf, print ke qaabil A4 format mein
+- **Ghalti Kam** — Khud-ba-khud hisaab — jama, discount, grand total sab khud nikalta hai
+- **Customer Ka Record** — Tamam customers ki maloomat ek jagah save
+- **Product Catalogue** — Items ki list — baar baar likhne ki zaroorat nahi
+- **Invoice History** — Purane invoice asaani se dhoondhein
+- **Draft System** — Adhoora invoice save karein — baad mein mukammal karein
+- **Auto-Save** — Kaam zaya nahi hoga — khud-ba-khud save hota rehta hai
+- **Muft (Free) PDF** — Alag software ki zaroorat nahi
+- **Dark Mode** — Raat ko kaam karein, aankhon ko takleef nahi
 
-### تکنیکی فائدے
-- **ویب بیسڈ** — کوئی انسٹالیشن نہیں، بس لنک کھولیں
-- **محفوظ ڈیٹا** — PostgreSQL میں ڈیٹا محفوظ
-- **تیز رفتار** — React + Node.js سے بنا ہوا — بہت تیز چلتا ہے
-- **مفت ڈیپلائمنٹ** — Replit کے ساتھ مفت میں آن لائن کریں
-
----
-
-## ⚠️ نقصانات / حدود | Limitations & Disadvantages
-
-### موجودہ حدود
-- **انٹرنیٹ ضروری** — آن لائن سسٹم ہے، بغیر انٹرنیٹ کام نہیں کرتا (جب تک مقامی نصب نہ کریں)
-- **کوئی لاگ ان نہیں** — ابھی کوئی یوزر اکاؤنٹ سسٹم نہیں — ایک کاروبار کے لیے بنا ہے
-- **ملٹی کرنسی نہیں** — صرف روپے (Rs.) میں کام کرتا ہے
-- **انوائس ٹیمپلیٹ** — فی الحال ایک ہی طرح کا انوائس ڈیزائن ہے
-- **ٹیکس حساب نہیں** — GST یا دیگر ٹیکس کا الگ خانہ نہیں (ڈسکاؤنٹ ہے، ٹیکس نہیں)
-- **انوائس اسٹیٹس نہیں** — ادا شدہ / غیر ادا شدہ کا ابھی نشان نہیں
-- **ڈیٹا بیک اپ** — خود سے ڈیٹابیس بیک اپ کا انتظام کرنا ہوگا
-- **رپورٹنگ نہیں** — ماہانہ یا سالانہ رپورٹ کی سہولت ابھی نہیں
-
-### تکنیکی حدود
-- **سنگل یوزر** — ایک وقت میں ایک یوزر کے لیے موزوں
-- **آف لائن کام نہیں** — ڈیٹابیس کنیکشن ضروری ہے
-- **PDF ڈاؤن لوڈ** — براہ راست PDF ڈاؤن لوڈ نہیں، بلکہ براؤزر کے Print → Save as PDF سے کام کرتا ہے
+### Technical Faiday
+- **Web Based** — Koi installation nahi, bas link kholein
+- **Mehfooz (Secure) Data** — PostgreSQL mein data save
+- **Tez Raftar (Fast)** — React + Node.js se bana hua — bohot tez chalta hai
+- **Muft Deployment** — Replit ke saath muft mein online karein
 
 ---
 
-## 🛠️ تکنیکی ڈھانچہ | Technical Stack
+## ⚠️ Nuqsanat / Hudood (Limitations)
+
+### Mojooda Hudood
+- **Internet Zaroori** — Online system hai, bina internet kaam nahi karta (jab tak local install na karein)
+- **Koi Login Nahi** — Abhi koi user account system nahi — ek kaarobar ke liye bana hai
+- **Multi-Currency Nahi** — Sirf Rupay (Rs.) mein kaam karta hai
+- **Invoice Template** — Filhal ek hi tarah ka invoice design hai
+- **Tax Hisaab Nahi** — GST ya doosre tax ka alag khana nahi (discount hai, tax nahi)
+- **Invoice Status Nahi** — Ada-shuda / na-ada-shuda (paid/unpaid) ka abhi nishaan nahi
+- **Data Backup** — Khud se database backup ka intezam karna hoga
+- **Reporting Nahi** — Mahana ya saalana report ki sahoolat abhi nahi
+
+### Technical Hudood
+- **Single User** — Aik waqt mein aik user ke liye munasib
+- **Offline Kaam Nahi** — Database connection zaroori hai
+- **PDF Download** — Direct PDF download nahi, balke browser ke Print → Save as PDF se kaam karta hai
+
+---
+
+## 🛠️ Technical Dhaancha (Stack)
 
 ```
 Frontend  :  React 19 + Vite + Tailwind CSS + shadcn/ui
 Backend   :  Node.js + Express (Fastify) + Drizzle ORM
 Database  :  PostgreSQL (Neon)
 API       :  REST API — OpenAPI Spec + Orval Codegen
-Fonts     :  Inter (UI) + Dancing Script (Cursive footer)
+Fonts     :  Inter (UI) + Dancing Script (Cursive footer) + Playfair Display
 Routing   :  Wouter (client-side)
 State     :  TanStack Query (server state)
 ```
 
 ---
 
-## 📁 فائل ڈھانچہ | Project Structure
+## 📁 File Dhaancha (Project Structure)
 
 ```
 az-distribution/
 ├── artifacts/
-│   ├── api-server/        ← بیک اینڈ سرور (Node.js)
+│   ├── api-server/        ← Backend server (Node.js)
 │   │   └── src/routes/   ← API endpoints
-│   └── invoice-manager/  ← فرنٹ اینڈ (React)
+│   └── invoice-manager/  ← Frontend (React)
 │       └── src/
-│           ├── pages/    ← تمام صفحے
-│           └── components/ ← قابلِ استعمال حصے
+│           ├── pages/    ← Tamam pages
+│           └── components/ ← Re-usable components
 ├── lib/
-│   ├── db/               ← ڈیٹابیس اسکیما
-│   └── api-client-react/ ← خودکار API hooks
-└── AZ_DISTRIBUTION_GUIDE.md ← یہ فائل
+│   ├── db/               ← Database schema
+│   └── api-client-react/ ← Khud-kaar (auto) API hooks
+└── AZ_DISTRIBUTION_GUIDE.md ← Yeh file
 ```
 
 ---
 
-## 🔧 ماحولیاتی متغیرات | Environment Variables
+## 🔧 Environment Variables
 
-| متغیر | وضاحت | مثال |
-|--------|--------|------|
-| `DATABASE_URL` | PostgreSQL کنیکشن | `postgresql://...` |
-| `PORT` | API سرور پورٹ | `8080` |
-| `BASE_PATH` | فرنٹ اینڈ بیس پاتھ | `/` |
+| Variable | Wazahat | Misaal |
+|----------|---------|--------|
+| `DATABASE_URL` | PostgreSQL connection | `postgresql://...` |
+| `PORT` | API server port | `8080` |
+| `BASE_PATH` | Frontend base path | `/` |
 
 ---
 
-## 🆘 عام مسائل اور حل | Troubleshooting
+## 🆘 Aam Masail Aur Hal (Troubleshooting)
 
-| مسئلہ | حل |
+| Masla | Hal |
 |-------|-----|
-| ایپ نہیں کھلتی | API سرور چل رہا ہے یا نہیں جانچیں |
-| انوائس محفوظ نہیں ہوتا | تمام لازمی خانے بھریں (نمبر، تاریخ، گاہک) |
-| پرنٹ میں سائیڈبار آتا ہے | Print بٹن ہی استعمال کریں (Ctrl+P نہیں) |
-| ڈیٹا ضائع ہوگیا | DATABASE_URL صحیح ہے یا نہیں جانچیں |
-| پروڈکٹ نہیں ملتا | پہلے Products صفحے پر شامل کریں |
+| App nahi khulti | Check karein API server chal raha hai ya nahi |
+| Invoice save nahi hota | Tamam zaroori khaane bharein (number, date, customer) |
+| Print mein sidebar aata hai | Print button hi use karein (Ctrl+P nahi) |
+| Data zaya ho gaya | DATABASE_URL sahi hai ya nahi check karein |
+| Product nahi milta | Pehle Products page per add karein |
 
 ---
 
-## 📞 رابطہ | Contact
+## 📞 Rabita (Contact)
 
-**AZ DISTRIBUTION**  
-Mirpur Azad Kashmir, 12130  
+**AZ DISTRIBUTION**
+Mirpur Azad Kashmir, 12130
 +92 318 4396075
 
-**Developed by:** sonic  
+**Developed by:** sonic
 **Framework:** Built on Replit
 
 ---
 
-## 📜 لائسنس | License
+## 📜 License
 
-یہ سافٹ ویئر صرف AZ DISTRIBUTION کے ذاتی تجارتی استعمال کے لیے ہے۔  
-بغیر اجازت تقسیم یا فروخت ممنوع ہے۔
+Yeh software sirf AZ DISTRIBUTION ke zaati kaarobari istemal ke liye hai.
+Bina ijazat taqseem (distribute) ya farokht (sell) karna mamnoo (forbidden) hai.
 
 ---
 
-*آخری اپڈیٹ: مئی 2026 | Last Updated: May 2026*  
+*Last Updated: May 2026*
 *Author: sonic*
