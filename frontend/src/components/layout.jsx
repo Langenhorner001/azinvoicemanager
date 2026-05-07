@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { FileText, Users, Package, Moon, Sun, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Package, Moon, Sun, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ function useTheme() {
 }
 
 const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/invoices', label: 'Invoices', icon: FileText },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/products', label: 'Products', icon: Package },

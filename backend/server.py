@@ -2,13 +2,14 @@ from fastapi import FastAPI, APIRouter, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
-from typing import List, Optional, Any
-from datetime import datetime, timezone
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta
 import os
 import re
 import logging
 from pathlib import Path
+from collections import defaultdict
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -45,7 +46,6 @@ async def get_next_id(collection_name: str) -> int:
 
 
 def serialize(doc: dict) -> dict:
-    """Remove MongoDB _id and return clean dict."""
     if doc is None:
         return None
     doc = dict(doc)
@@ -59,22 +59,10 @@ class CustomerCreate(BaseModel):
     name: str
     address: str = ""
 
-class Customer(BaseModel):
-    id: int
-    name: str
-    address: str
-    createdAt: datetime
-
 
 class ProductCreate(BaseModel):
     name: str
     defaultPrice: float = 0.0
-
-class Product(BaseModel):
-    id: int
-    name: str
-    defaultPrice: float
-    createdAt: datetime
 
 
 class InvoiceItemIn(BaseModel):
@@ -84,6 +72,7 @@ class InvoiceItemIn(BaseModel):
     discount: float = 0
     discountType: str = "percent"
 
+
 class InvoiceCreate(BaseModel):
     invoiceNumber: str
     date: str
@@ -92,6 +81,7 @@ class InvoiceCreate(BaseModel):
     isDraft: bool = True
     status: str = "draft"
     items: List[InvoiceItemIn] = []
+
 
 class InvoiceUpdate(BaseModel):
     invoiceNumber: Optional[str] = None
@@ -124,6 +114,41 @@ def generate_invoice_number(count: int) -> str:
     mm = str(now.month).zfill(2)
     seq = str(count + 1).zfill(3)
     return f"AZ-{yy}{mm}-{seq}"
+
+
+def serialize_invoice(doc: dict) -> dict:
+    if not doc:
+        return None
+    doc = dict(doc)
+    doc.pop("_id", None)
+    doc["subtotal"] = float(doc.get("subtotal", 0))
+    doc["grandTotal"] = float(doc.get("grandTotal", 0))
+    items = doc.get("items", [])
+    for item in items:
+        item["qty"] = float(item.get("qty", 0))
+        item["price"] = float(item.get("price", 0))
+        item["discount"] = float(item.get("discount", 0))
+        item["total"] = float(item.get("total", 0))
+        item.setdefault("discountType", "percent")
+    doc["items"] = items
+    return doc
+
+
+VALID_STATUSES = {"draft", "unpaid", "paid", "overdue"}
+DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+NET_DAYS = 30  # Invoices are due NET-30
+
+
+async def mark_overdue_invoices():
+    """Update unpaid invoices older than NET_DAYS to overdue status."""
+    due_cutoff = (datetime.now(timezone.utc) - timedelta(days=NET_DAYS)).strftime("%Y-%m-%d")
+    result = await db.invoices.update_many(
+        {"status": "unpaid", "date": {"$lte": due_cutoff}},
+        {"$set": {"status": "overdue", "isDraft": False}},
+    )
+    if result.modified_count:
+        logger.info(f"Marked {result.modified_count} invoice(s) as overdue")
 
 
 # ─── Customers Routes ────────────────────────────────────────────────────────
@@ -212,28 +237,6 @@ async def delete_product(pid: int):
 
 # ─── Invoices Routes ─────────────────────────────────────────────────────────
 
-def serialize_invoice(doc: dict) -> dict:
-    if not doc:
-        return None
-    doc = dict(doc)
-    doc.pop("_id", None)
-    doc["subtotal"] = float(doc.get("subtotal", 0))
-    doc["grandTotal"] = float(doc.get("grandTotal", 0))
-    items = doc.get("items", [])
-    for item in items:
-        item["qty"] = float(item.get("qty", 0))
-        item["price"] = float(item.get("price", 0))
-        item["discount"] = float(item.get("discount", 0))
-        item["total"] = float(item.get("total", 0))
-        item.setdefault("discountType", "percent")
-    doc["items"] = items
-    return doc
-
-
-VALID_STATUSES = {"draft", "unpaid", "paid", "overdue"}
-DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-
-
 @api_router.get("/invoices/next-number")
 async def get_next_invoice_number():
     now = datetime.now(timezone.utc)
@@ -251,6 +254,8 @@ async def list_invoices(
     dateFrom: Optional[str] = Query(None),
     dateTo: Optional[str] = Query(None),
 ):
+    await mark_overdue_invoices()
+
     query = {}
     conditions = []
 
@@ -358,6 +363,68 @@ async def delete_invoice(inv_id: int):
         raise HTTPException(404, "Invoice not found")
 
 
+# ─── Dashboard ───────────────────────────────────────────────────────────────
+
+@api_router.get("/dashboard")
+async def get_dashboard():
+    await mark_overdue_invoices()
+
+    all_invoices = await db.invoices.find({}, {"_id": 0}).to_list(5000)
+
+    total_revenue = sum(inv.get("grandTotal", 0) for inv in all_invoices if inv.get("status") == "paid")
+    outstanding = sum(inv.get("grandTotal", 0) for inv in all_invoices if inv.get("status") in ("unpaid", "overdue"))
+
+    now = datetime.now(timezone.utc)
+    this_month_str = f"{now.year}-{str(now.month).zfill(2)}"
+    this_month_revenue = sum(
+        inv.get("grandTotal", 0)
+        for inv in all_invoices
+        if inv.get("status") == "paid" and inv.get("date", "")[:7] == this_month_str
+    )
+
+    # Status counts
+    status_counts = {"draft": 0, "unpaid": 0, "paid": 0, "overdue": 0}
+    for inv in all_invoices:
+        s = inv.get("status", "draft")
+        if s in status_counts:
+            status_counts[s] += 1
+
+    # Monthly revenue — last 6 months
+    monthly_data = defaultdict(lambda: {"revenue": 0.0, "count": 0})
+    for inv in all_invoices:
+        if inv.get("status") == "paid" and inv.get("date"):
+            month_key = inv["date"][:7]  # YYYY-MM
+            monthly_data[month_key]["revenue"] += float(inv.get("grandTotal", 0))
+            monthly_data[month_key]["count"] += 1
+
+    # Build last 6 months list
+    months = []
+    for i in range(5, -1, -1):
+        d = datetime(now.year, now.month, 1) - timedelta(days=i * 30)
+        key = f"{d.year}-{str(d.month).zfill(2)}"
+        label = d.strftime("%b %Y")
+        months.append({
+            "month": label,
+            "key": key,
+            "revenue": round(monthly_data[key]["revenue"]),
+            "count": monthly_data[key]["count"],
+        })
+
+    # Recent invoices — last 5
+    recent = sorted(all_invoices, key=lambda x: x.get("createdAt", ""), reverse=True)[:5]
+    recent_serialized = [serialize_invoice(dict(inv)) for inv in recent]
+
+    return {
+        "totalRevenue": round(total_revenue),
+        "outstanding": round(outstanding),
+        "thisMonthRevenue": round(this_month_revenue),
+        "invoiceCount": len(all_invoices),
+        "statusCounts": status_counts,
+        "monthlyRevenue": months,
+        "recentInvoices": recent_serialized,
+    }
+
+
 # ─── Health ──────────────────────────────────────────────────────────────────
 
 @api_router.get("/")
@@ -411,6 +478,7 @@ app.include_router(api_router)
 @app.on_event("startup")
 async def startup():
     await seed_data()
+    await mark_overdue_invoices()
 
 
 @app.on_event("shutdown")

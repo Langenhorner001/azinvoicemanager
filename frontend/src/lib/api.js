@@ -38,7 +38,10 @@ export const updateCustomer = (id, data) =>
 export const deleteCustomer = (id) =>
   api.delete(`/customers/${id}`);
 
-// ─── Products ───────────────────────────────────────────────────────────────
+// ─── Dashboard ──────────────────────────────────────────────────────────────
+
+export const getDashboard = () =>
+  api.get('/dashboard').then(r => r.data);
 
 export const listProducts = () =>
   api.get('/products').then(r => r.data);
