@@ -1,8 +1,18 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # IDE and editors
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
 # Dependencies
 node_modules/
@@ -18,6 +28,9 @@ node_modules/
 
 # Testing
 /coverage
+/.sass-cache
+/connect.lock
+testem.log
 
 # Next.js
 /.next/
@@ -28,10 +41,10 @@ next-env.d.ts
 # Production builds
 /build
 dist/
-dist
+tmp
+out-tsc
 
-# Environment files (comprehensive coverage)
-
+# Environment files
 *token.json*
 *credentials.json*
 
@@ -41,10 +54,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dump.rdb
+/libpeerconnection.log
 
 # System files
 .DS_Store
 *.pem
+Thumbs.db
 
 # Python
 __pycache__/
@@ -57,6 +72,8 @@ chainlit.md
 .chainlit
 .ipynb_checkpoints/
 .ac
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 
 # Deployment
 .vercel
@@ -75,12 +92,18 @@ agenthub/agents/youtube/db
 
 # Build caches
 .cache/
+.local/
 
 memory/test_credentials.md
 
 # Mobile development
 android-sdk/
+.expo
+.expo-shared
 
 # Expo
 mobile/.expo/
 mobile/.metro-cache/
+
+# Replit
+/typings
