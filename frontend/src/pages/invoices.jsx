@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Plus, Search, Trash2, FileEdit, X } from 'lucide-react';
+import {
+  Plus, Search, Trash2, FileEdit, X, CheckSquare, Square, CheckCheck,
+  ChevronDown,
+} from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '@/lib/api';
 import { Layout } from '@/components/layout';
@@ -11,10 +14,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 function formatRs(amount) {
   return `Rs. ${Number(amount).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -23,31 +31,34 @@ function formatRs(amount) {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch { return dateStr; }
+}
+
+function isDueSoon(dueDate) {
+  if (!dueDate) return false;
+  const diff = (new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+  return diff >= 0 && diff <= 7;
 }
 
 const STATUS_CONFIG = {
-  draft: { label: 'Draft', className: 'bg-gray-100 text-gray-600 border border-gray-200' },
-  unpaid: { label: 'Unpaid', className: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
-  paid: { label: 'Paid', className: 'bg-green-50 text-green-700 border border-green-200' },
+  draft:   { label: 'Draft',   className: 'bg-gray-100 text-gray-600 border border-gray-200' },
+  unpaid:  { label: 'Unpaid',  className: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
+  paid:    { label: 'Paid',    className: 'bg-green-50 text-green-700 border border-green-200' },
   overdue: { label: 'Overdue', className: 'bg-red-50 text-red-700 border border-red-200' },
 };
 
 const STATUS_CARD_COLORS = {
-  draft: 'border-gray-200 bg-gray-50',
-  unpaid: 'border-yellow-200 bg-yellow-50',
-  paid: 'border-green-200 bg-green-50',
+  draft:   'border-gray-200 bg-gray-50',
+  unpaid:  'border-yellow-200 bg-yellow-50',
+  paid:    'border-green-200 bg-green-50',
   overdue: 'border-red-200 bg-red-50',
 };
 
 const STATUS_TEXT_COLORS = {
-  draft: 'text-gray-700',
-  unpaid: 'text-yellow-700',
-  paid: 'text-green-700',
+  draft:   'text-gray-700',
+  unpaid:  'text-yellow-700',
+  paid:    'text-green-700',
   overdue: 'text-red-700',
 };
 
@@ -78,7 +89,10 @@ function getSearchParams() {
 export default function InvoicesPage() {
   const [, navigate] = useLocation();
   const [deleteId, setDeleteId] = useState(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [selected, setSelected] = useState(new Set());
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [search, setSearch] = useState(() => getSearchParams().get('search') || '');
   const [statusFilter, setStatusFilter] = useState(() => getSearchParams().get('status') || '');
@@ -92,8 +106,7 @@ export default function InvoicesPage() {
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
     const newSearch = params.toString();
-    const newUrl = newSearch ? `?${newSearch}` : window.location.pathname;
-    window.history.replaceState(null, '', newUrl);
+    window.history.replaceState(null, '', newSearch ? `?${newSearch}` : window.location.pathname);
   }, [search, statusFilter, dateFrom, dateTo]);
 
   const apiParams = {};
@@ -111,14 +124,57 @@ export default function InvoicesPage() {
     mutationFn: (id) => api.deleteInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', 'next-number'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setDeleteId(null);
     },
   });
 
+  const bulkStatusMutation = useMutation({
+    mutationFn: ({ ids, status }) => api.bulkUpdateStatus(ids, status),
+    onSuccess: (data, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setSelected(new Set());
+      toast({ title: `Updated ${data.updated} invoice${data.updated !== 1 ? 's' : ''}`, description: `Marked as ${status}` });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to update invoices.', variant: 'destructive' }),
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids) => api.bulkDeleteInvoices(ids),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setSelected(new Set());
+      setBulkDeleteConfirm(false);
+      toast({ title: `Deleted ${data.deleted} invoice${data.deleted !== 1 ? 's' : ''}` });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to delete invoices.', variant: 'destructive' }),
+  });
+
+  // Selection helpers
+  const allIds = invoices.map(inv => inv.id);
+  const allSelected = allIds.length > 0 && allIds.every(id => selected.has(id));
+  const someSelected = selected.size > 0;
+
+  function toggleAll() {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(allIds));
+  }
+
+  function toggleOne(id) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  const selectedIds = [...selected];
+
   const overdueCount = invoices.filter(inv => inv.status === 'overdue').length;
   const outstandingTotal = invoices
-    .filter(inv => inv.status === 'unpaid' || inv.status === 'overdue')
+    .filter(inv => ['unpaid', 'overdue'].includes(inv.status))
     .reduce((sum, inv) => sum + inv.grandTotal, 0);
 
   const hasActiveFilters = !!(search || statusFilter || dateFrom || dateTo);
@@ -152,10 +208,7 @@ export default function InvoicesPage() {
               return (
                 <button
                   key={s}
-                  className={cn(
-                    'text-left border rounded-lg p-3 transition-colors hover:opacity-80 cursor-pointer',
-                    STATUS_CARD_COLORS[s]
-                  )}
+                  className={cn('text-left border rounded-lg p-3 transition-colors hover:opacity-80 cursor-pointer', STATUS_CARD_COLORS[s])}
                   onClick={() => setStatusFilter(s)}
                   data-testid={`card-status-${s}`}
                 >
@@ -163,9 +216,7 @@ export default function InvoicesPage() {
                     {s.charAt(0).toUpperCase() + s.slice(1)}
                   </div>
                   <div className={cn('text-xl font-bold', STATUS_TEXT_COLORS[s])}>{count}</div>
-                  {count > 0 && (
-                    <div className={cn('text-xs mt-0.5', STATUS_TEXT_COLORS[s])}>{formatRs(total)}</div>
-                  )}
+                  {count > 0 && <div className={cn('text-xs mt-0.5', STATUS_TEXT_COLORS[s])}>{formatRs(total)}</div>}
                 </button>
               );
             })}
@@ -175,7 +226,7 @@ export default function InvoicesPage() {
         {/* Outstanding alert */}
         {!isLoading && overdueCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            <span>{overdueCount} overdue invoice{overdueCount !== 1 ? 's' : ''} — {formatRs(outstandingTotal)} total outstanding</span>
+            {overdueCount} overdue invoice{overdueCount !== 1 ? 's' : ''} — {formatRs(outstandingTotal)} total outstanding
           </div>
         )}
 
@@ -239,13 +290,71 @@ export default function InvoicesPage() {
           )}
         </div>
 
+        {/* Bulk Action Bar */}
+        {someSelected && (
+          <div className="flex items-center justify-between px-4 py-2.5 bg-foreground text-background rounded-lg gap-3 flex-wrap animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-center gap-2.5">
+              <CheckCheck size={15} />
+              <span className="text-sm font-medium">{selected.size} selected</span>
+              <button
+                className="text-xs text-background/60 hover:text-background transition-colors underline underline-offset-2"
+                onClick={() => setSelected(new Set())}
+                data-testid="button-clear-selection"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="secondary" className="h-7 gap-1.5 text-xs" data-testid="button-bulk-status">
+                    Set Status <ChevronDown size={12} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {['paid', 'unpaid', 'draft', 'overdue'].map(s => (
+                    <DropdownMenuItem
+                      key={s}
+                      onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status: s })}
+                      data-testid={`bulk-status-${s}`}
+                    >
+                      Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-7 gap-1.5 text-xs bg-red-500 hover:bg-red-600"
+                onClick={() => setBulkDeleteConfirm(true)}
+                disabled={bulkDeleteMutation.isPending}
+                data-testid="button-bulk-delete"
+              >
+                <Trash2 size={12} /> Delete
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div className="border border-border rounded-lg overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[1fr_1.5fr_1fr_auto_1fr_auto] items-center px-4 py-2.5 bg-muted/40 border-b border-border text-xs font-medium text-muted-foreground gap-3">
+          <div className="grid grid-cols-[auto_1fr_1.5fr_1fr_auto_1fr_auto] items-center px-4 py-2.5 bg-muted/40 border-b border-border text-xs font-medium text-muted-foreground gap-3">
+            <button
+              className="flex items-center justify-center w-4 h-4"
+              onClick={toggleAll}
+              aria-label="Select all"
+              data-testid="checkbox-select-all"
+            >
+              {allSelected
+                ? <CheckSquare size={15} className="text-foreground" />
+                : <Square size={15} />
+              }
+            </button>
             <span>Invoice No.</span>
             <span>Customer</span>
-            <span>Date</span>
+            <span>Date / Due</span>
             <span>Status</span>
             <span className="text-right">Amount</span>
             <span></span>
@@ -254,9 +363,7 @@ export default function InvoicesPage() {
           {isLoading ? (
             <div className="divide-y divide-border">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="px-4 py-3">
-                  <Skeleton className="h-4 w-full" />
-                </div>
+                <div key={i} className="px-4 py-3"><Skeleton className="h-4 w-full" /></div>
               ))}
             </div>
           ) : invoices.length === 0 ? (
@@ -279,20 +386,75 @@ export default function InvoicesPage() {
               {invoices.map((inv) => (
                 <div
                   key={inv.id}
-                  className="grid grid-cols-[1fr_1.5fr_1fr_auto_1fr_auto] items-center px-4 py-3 gap-3 hover:bg-muted/30 cursor-pointer transition-colors group"
-                  onClick={() => navigate(`/invoices/${inv.id}/edit`)}
+                  className={cn(
+                    'grid grid-cols-[auto_1fr_1.5fr_1fr_auto_1fr_auto] items-center px-4 py-3 gap-3 hover:bg-muted/30 transition-colors group',
+                    selected.has(inv.id) && 'bg-muted/40'
+                  )}
                   data-testid={`row-invoice-${inv.id}`}
                 >
-                  <span className="text-sm font-mono font-medium">{inv.invoiceNumber}</span>
-                  <span className="text-sm truncate">{inv.customerName || '—'}</span>
-                  <span className="text-sm text-muted-foreground">{formatDate(inv.date)}</span>
+                  {/* Checkbox */}
+                  <button
+                    className="flex items-center justify-center w-4 h-4"
+                    onClick={e => { e.stopPropagation(); toggleOne(inv.id); }}
+                    aria-label="Select invoice"
+                    data-testid={`checkbox-invoice-${inv.id}`}
+                  >
+                    {selected.has(inv.id)
+                      ? <CheckSquare size={15} className="text-foreground" />
+                      : <Square size={15} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    }
+                  </button>
+
+                  {/* Invoice Number */}
+                  <span
+                    className="text-sm font-mono font-medium cursor-pointer"
+                    onClick={() => navigate(`/invoices/${inv.id}/edit`)}
+                  >
+                    {inv.invoiceNumber}
+                  </span>
+
+                  {/* Customer */}
+                  <span
+                    className="text-sm truncate cursor-pointer"
+                    onClick={() => navigate(`/invoices/${inv.id}/edit`)}
+                  >
+                    {inv.customerName || '—'}
+                  </span>
+
+                  {/* Date / Due */}
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/invoices/${inv.id}/edit`)}
+                  >
+                    <div className="text-sm text-muted-foreground">{formatDate(inv.date)}</div>
+                    {inv.dueDate && inv.status !== 'paid' && inv.status !== 'draft' && (
+                      <div className={cn(
+                        'text-xs mt-0.5',
+                        inv.status === 'overdue' ? 'text-red-600 font-medium' :
+                        isDueSoon(inv.dueDate) ? 'text-yellow-600 font-medium' : 'text-muted-foreground'
+                      )}>
+                        Due {formatDate(inv.dueDate)}
+                        {isDueSoon(inv.dueDate) && inv.status === 'unpaid' && ' ⚡'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status */}
                   <StatusBadge status={inv.status} />
-                  <span className="text-sm font-medium text-right">{formatRs(inv.grandTotal)}</span>
+
+                  {/* Amount */}
+                  <span
+                    className="text-sm font-medium text-right cursor-pointer"
+                    onClick={() => navigate(`/invoices/${inv.id}/edit`)}
+                  >
+                    {formatRs(inv.grandTotal)}
+                  </span>
+
+                  {/* Actions */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
-                      variant="ghost" size="icon"
-                      className="h-7 w-7"
-                      onClick={e => { e.stopPropagation(); navigate(`/invoices/${inv.id}/edit`); }}
+                      variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => navigate(`/invoices/${inv.id}/edit`)}
                       data-testid={`button-edit-invoice-${inv.id}`}
                     >
                       <FileEdit size={13} />
@@ -313,7 +475,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* Delete confirm */}
+      {/* Single Delete confirm */}
       <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -330,6 +492,28 @@ export default function InvoicesPage() {
               data-testid="button-confirm-delete"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete confirm */}
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selected.size} Invoice{selected.size !== 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the {selected.size} selected invoice{selected.size !== 1 ? 's' : ''}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-bulk-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => bulkDeleteMutation.mutate(selectedIds)}
+              data-testid="button-confirm-bulk-delete"
+            >
+              Delete All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

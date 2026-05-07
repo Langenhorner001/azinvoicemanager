@@ -24,6 +24,12 @@ export const updateInvoice = (id, data) =>
 export const deleteInvoice = (id) =>
   api.delete(`/invoices/${id}`);
 
+export const bulkUpdateStatus = (ids, status) =>
+  api.patch('/invoices/bulk-status', { ids, status }).then(r => r.data);
+
+export const bulkDeleteInvoices = (ids) =>
+  api.post('/invoices/bulk-delete', { ids }).then(r => r.data);
+
 // ─── Customers ──────────────────────────────────────────────────────────────
 
 export const listCustomers = () =>

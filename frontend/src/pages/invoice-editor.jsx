@@ -40,6 +40,13 @@ function lineTotal(item) {
   return gross * (1 - item.discount / 100);
 }
 
+function addDays(dateStr, days) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return formatDate(d);
+}
+
 export default function InvoiceEditorPage({ mode }) {
   const params = useParams();
   const id = mode === 'edit' ? parseInt(params.id || '0') : null;
@@ -48,7 +55,9 @@ export default function InvoiceEditorPage({ mode }) {
   const queryClient = useQueryClient();
 
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [date, setDate] = useState(formatDate(new Date()));
+  const today = formatDate(new Date());
+  const [date, setDate] = useState(today);
+  const [dueDate, setDueDate] = useState(addDays(today, 30));
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [status, setStatus] = useState('draft');
@@ -98,6 +107,7 @@ export default function InvoiceEditorPage({ mode }) {
       initialized.current = true;
       setInvoiceNumber(existingInvoice.invoiceNumber);
       setDate(existingInvoice.date);
+      setDueDate(existingInvoice.dueDate || addDays(existingInvoice.date, 30));
       setCustomerName(existingInvoice.customerName);
       setCustomerAddress(existingInvoice.customerAddress);
       setStatus(existingInvoice.status || 'draft');
@@ -126,6 +136,7 @@ export default function InvoiceEditorPage({ mode }) {
     return {
       invoiceNumber,
       date,
+      dueDate,
       customerName,
       customerAddress,
       isDraft,
@@ -180,7 +191,7 @@ export default function InvoiceEditorPage({ mode }) {
     scheduleAutoSave();
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoiceNumber, date, customerName, customerAddress, items]);
+  }, [invoiceNumber, date, dueDate, customerName, customerAddress, items]);
 
   function addItem() {
     setItems(prev => [...prev, { key: makeKey(), itemName: '', qty: 1, price: 0, discountEnabled: false, discount: 0, discountType: 'percent' }]);
@@ -320,28 +331,43 @@ export default function InvoiceEditorPage({ mode }) {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Date</Label>
+                    <Label>Invoice Date</Label>
                     <Input
                       type="date"
                       value={date}
-                      onChange={e => setDate(e.target.value)}
+                      onChange={e => {
+                        setDate(e.target.value);
+                        setDueDate(addDays(e.target.value, 30));
+                      }}
                       data-testid="input-invoice-date"
                     />
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="w-40" data-testid="select-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5">
+                      Due Date
+                      <span className="text-[10px] text-muted-foreground font-normal">(Net-30 default)</span>
+                    </Label>
+                    <Input
+                      type="date"
+                      value={dueDate}
+                      onChange={e => setDueDate(e.target.value)}
+                      data-testid="input-invoice-due-date"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Status</Label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="w-full" data-testid="select-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="overdue">Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </section>
 
@@ -455,6 +481,7 @@ export default function InvoiceEditorPage({ mode }) {
               <InvoicePreview
                 invoiceNumber={invoiceNumber}
                 date={date}
+                dueDate={dueDate}
                 customerName={customerName}
                 customerAddress={customerAddress}
                 items={previewItems}

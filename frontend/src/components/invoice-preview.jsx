@@ -23,7 +23,7 @@ function formatInvoiceNo(no) {
   return no;
 }
 
-export function InvoicePreview({ invoiceNumber, date, customerName, customerAddress, items, className }) {
+export function InvoicePreview({ invoiceNumber, date, dueDate, customerName, customerAddress, items, className }) {
   let subtotal = 0;
   let grandTotal = 0;
 
@@ -100,6 +100,11 @@ export function InvoicePreview({ invoiceNumber, date, customerName, customerAddr
             <span className="text-black font-semibold">{formatInvoiceNo(invoiceNumber)}</span>
           </div>
           <div className="text-black font-medium text-[9px] mt-0.5">{formatDate(date) || '—'}</div>
+          {dueDate && (
+            <div className="text-gray-500 text-[8px] mt-0.5">
+              Due: <span className="text-black">{formatDate(dueDate)}</span>
+            </div>
+          )}
         </div>
       </div>
 

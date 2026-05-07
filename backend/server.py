@@ -76,6 +76,7 @@ class InvoiceItemIn(BaseModel):
 class InvoiceCreate(BaseModel):
     invoiceNumber: str
     date: str
+    dueDate: Optional[str] = None
     customerName: str = ""
     customerAddress: str = ""
     isDraft: bool = True
@@ -83,14 +84,13 @@ class InvoiceCreate(BaseModel):
     items: List[InvoiceItemIn] = []
 
 
-class InvoiceUpdate(BaseModel):
-    invoiceNumber: Optional[str] = None
-    date: Optional[str] = None
-    customerName: Optional[str] = None
-    customerAddress: Optional[str] = None
-    isDraft: Optional[bool] = None
-    status: Optional[str] = None
-    items: Optional[List[InvoiceItemIn]] = None
+class BulkStatusUpdate(BaseModel):
+    ids: List[int]
+    status: str
+
+
+class BulkDelete(BaseModel):
+    ids: List[int]
 
 
 # ─── Business Logic ──────────────────────────────────────────────────────────
@@ -123,6 +123,7 @@ def serialize_invoice(doc: dict) -> dict:
     doc.pop("_id", None)
     doc["subtotal"] = float(doc.get("subtotal", 0))
     doc["grandTotal"] = float(doc.get("grandTotal", 0))
+    doc.setdefault("dueDate", None)
     items = doc.get("items", [])
     for item in items:
         item["qty"] = float(item.get("qty", 0))
@@ -141,14 +142,23 @@ NET_DAYS = 30  # Invoices are due NET-30
 
 
 async def mark_overdue_invoices():
-    """Update unpaid invoices older than NET_DAYS to overdue status."""
-    due_cutoff = (datetime.now(timezone.utc) - timedelta(days=NET_DAYS)).strftime("%Y-%m-%d")
-    result = await db.invoices.update_many(
-        {"status": "unpaid", "date": {"$lte": due_cutoff}},
+    """Update unpaid invoices past their due date (or date+30 days fallback) to overdue."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    fallback_cutoff = (datetime.now(timezone.utc) - timedelta(days=NET_DAYS)).strftime("%Y-%m-%d")
+
+    # Invoices with explicit dueDate set
+    r1 = await db.invoices.update_many(
+        {"status": "unpaid", "dueDate": {"$exists": True, "$ne": None, "$lte": today}},
         {"$set": {"status": "overdue", "isDraft": False}},
     )
-    if result.modified_count:
-        logger.info(f"Marked {result.modified_count} invoice(s) as overdue")
+    # Invoices without dueDate – use invoice date + NET_DAYS
+    r2 = await db.invoices.update_many(
+        {"status": "unpaid", "$or": [{"dueDate": None}, {"dueDate": {"$exists": False}}], "date": {"$lte": fallback_cutoff}},
+        {"$set": {"status": "overdue", "isDraft": False}},
+    )
+    total = r1.modified_count + r2.modified_count
+    if total:
+        logger.info(f"Marked {total} invoice(s) as overdue")
 
 
 # ─── Customers Routes ────────────────────────────────────────────────────────
@@ -237,6 +247,23 @@ async def delete_product(pid: int):
 
 # ─── Invoices Routes ─────────────────────────────────────────────────────────
 
+@api_router.patch("/invoices/bulk-status")
+async def bulk_update_status(body: BulkStatusUpdate):
+    if body.status not in VALID_STATUSES:
+        raise HTTPException(400, f"Invalid status. Valid: {VALID_STATUSES}")
+    result = await db.invoices.update_many(
+        {"id": {"$in": body.ids}},
+        {"$set": {"status": body.status, "isDraft": body.status == "draft"}}
+    )
+    return {"updated": result.modified_count}
+
+
+@api_router.post("/invoices/bulk-delete")
+async def bulk_delete_invoices(body: BulkDelete):
+    result = await db.invoices.delete_many({"id": {"$in": body.ids}})
+    return {"deleted": result.deleted_count}
+
+
 @api_router.get("/invoices/next-number")
 async def get_next_invoice_number():
     now = datetime.now(timezone.utc)
@@ -290,14 +317,20 @@ async def create_invoice(body: InvoiceCreate):
 
     items = [i.model_dump() for i in body.items]
     subtotal, grand_total = compute_totals(items)
-
     resolved_status = body.status if body.status in VALID_STATUSES else ("draft" if body.isDraft else "unpaid")
+
+    # Default due date: invoice date + NET_DAYS if not provided
+    due_date = body.dueDate
+    if not due_date and DATE_REGEX.match(body.date):
+        invoice_date = datetime.strptime(body.date, "%Y-%m-%d")
+        due_date = (invoice_date + timedelta(days=NET_DAYS)).strftime("%Y-%m-%d")
 
     inv_id = await get_next_id("invoices")
     doc = {
         "id": inv_id,
         "invoiceNumber": body.invoiceNumber,
         "date": body.date,
+        "dueDate": due_date,
         "customerName": body.customerName,
         "customerAddress": body.customerAddress,
         "subtotal": subtotal,
@@ -305,10 +338,7 @@ async def create_invoice(body: InvoiceCreate):
         "isDraft": body.isDraft,
         "status": resolved_status,
         "createdAt": datetime.now(timezone.utc).isoformat(),
-        "items": [
-            {**i, "total": compute_line_total(i)}
-            for i in items
-        ],
+        "items": [{**i, "total": compute_line_total(i)} for i in items],
     }
     await db.invoices.insert_one(doc)
     return serialize_invoice(doc)
@@ -330,22 +360,24 @@ async def update_invoice(inv_id: int, body: InvoiceCreate):
 
     items = [i.model_dump() for i in body.items]
     subtotal, grand_total = compute_totals(items)
-
     resolved_status = body.status if body.status in VALID_STATUSES else existing.get("status", "draft")
+
+    due_date = body.dueDate
+    if not due_date and DATE_REGEX.match(body.date):
+        invoice_date = datetime.strptime(body.date, "%Y-%m-%d")
+        due_date = (invoice_date + timedelta(days=NET_DAYS)).strftime("%Y-%m-%d")
 
     update_data = {
         "invoiceNumber": body.invoiceNumber,
         "date": body.date,
+        "dueDate": due_date,
         "customerName": body.customerName,
         "customerAddress": body.customerAddress,
         "subtotal": subtotal,
         "grandTotal": grand_total,
         "isDraft": body.isDraft,
         "status": resolved_status,
-        "items": [
-            {**i, "total": compute_line_total(i)}
-            for i in items
-        ],
+        "items": [{**i, "total": compute_line_total(i)} for i in items],
     }
 
     doc = await db.invoices.find_one_and_update(
