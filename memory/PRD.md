@@ -43,29 +43,23 @@ backend/
 - Auto-generated invoice numbers (AZ-YYMM-NNN format)
 - Auto-save draft while editing
 
-## What's Been Implemented (2026-05-07)
+## What's Been Implemented
 
-### Backend
-- FastAPI with MongoDB
-- Sequential integer IDs via counters collection
-- All CRUD endpoints for invoices, customers, products
-- Invoice line totals calculated server-side
-- Search/filter endpoints with MongoDB queries
+### Session 1 (2026-05-07) - MVP
+- FastAPI + MongoDB backend with all CRUD endpoints
+- Invoice editor with live A4 preview
+- Customer CRUD, Product CRUD
+- Sidebar layout with AZ branding
+- PDF download + print
+- Search/filter invoices
+- Dark mode
 - Seed data: 3 customers, 5 products
 
-### Frontend
-- Faithful implementation of original repo design
-- Sidebar layout with AZ DISTRIBUTION branding
-- Invoice list page with status cards, search, filters
-- Invoice editor with live A4 preview
-- Customer selection via command palette dropdown
-- Product auto-complete in item rows
-- Discount toggle (percent or fixed amount per line)
-- PDF download via html2canvas + jsPDF
-- Print via window.print() with print CSS
-- Dark mode via classList + localStorage
-- Customers CRUD page
-- Products CRUD page
+### Session 2 (2026-05-07) - Feature Additions
+- **Revenue Dashboard** at /dashboard: KPI cards, monthly bar chart (recharts), status breakdown, recent invoices
+- **Auto Overdue Logic**: unpaid invoices > 30 days auto-marked overdue (on list load + startup)
+- **Customer Invoice History**: click any customer → slide sheet with invoice list, collected/outstanding totals
+- Default route now / → /dashboard
 
 ## Test Results
 - Backend: 100% (16/16 tests)
