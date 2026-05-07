@@ -13,9 +13,7 @@ export default function NotFoundPage() {
         <h1 className="text-2xl font-bold mb-2">Page not found</h1>
         <p className="text-muted-foreground mb-6">The page you're looking for doesn't exist.</p>
         <Link href="/invoices">
-          <a>
-            <Button data-testid="btn-go-home">Go to Invoices</Button>
-          </a>
+          <Button data-testid="btn-go-home">Go to Invoices</Button>
         </Link>
       </div>
     </Layout>

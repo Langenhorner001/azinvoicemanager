@@ -68,20 +68,20 @@ export function Layout({ children }) {
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = location === href || location.startsWith(href + '/');
             return (
-              <Link key={href} href={href}>
-                <a
-                  className={cn(
-                    'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
-                    isActive
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                  )}
-                  data-testid={`nav-${label.toLowerCase()}`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Icon size={16} />
-                  {label}
-                </a>
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                  isActive
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                )}
+                data-testid={`nav-${label.toLowerCase()}`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Icon size={16} />
+                {label}
               </Link>
             );
           })}
