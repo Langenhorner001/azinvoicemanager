@@ -1,0 +1,418 @@
+from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+from typing import List, Optional, Any
+from datetime import datetime, timezone
+import os
+import re
+import logging
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
+
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ['DB_NAME']]
+
+app = FastAPI()
+api_router = APIRouter(prefix="/api")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ─── Helpers ────────────────────────────────────────────────────────────────
+
+async def get_next_id(collection_name: str) -> int:
+    result = await db.counters.find_one_and_update(
+        {"_id": collection_name},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=True
+    )
+    return result["seq"]
+
+
+def serialize(doc: dict) -> dict:
+    """Remove MongoDB _id and return clean dict."""
+    if doc is None:
+        return None
+    doc = dict(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+# ─── Pydantic Models ─────────────────────────────────────────────────────────
+
+class CustomerCreate(BaseModel):
+    name: str
+    address: str = ""
+
+class Customer(BaseModel):
+    id: int
+    name: str
+    address: str
+    createdAt: datetime
+
+
+class ProductCreate(BaseModel):
+    name: str
+    defaultPrice: float = 0.0
+
+class Product(BaseModel):
+    id: int
+    name: str
+    defaultPrice: float
+    createdAt: datetime
+
+
+class InvoiceItemIn(BaseModel):
+    itemName: str = ""
+    qty: float = 1
+    price: float = 0
+    discount: float = 0
+    discountType: str = "percent"
+
+class InvoiceCreate(BaseModel):
+    invoiceNumber: str
+    date: str
+    customerName: str = ""
+    customerAddress: str = ""
+    isDraft: bool = True
+    status: str = "draft"
+    items: List[InvoiceItemIn] = []
+
+class InvoiceUpdate(BaseModel):
+    invoiceNumber: Optional[str] = None
+    date: Optional[str] = None
+    customerName: Optional[str] = None
+    customerAddress: Optional[str] = None
+    isDraft: Optional[bool] = None
+    status: Optional[str] = None
+    items: Optional[List[InvoiceItemIn]] = None
+
+
+# ─── Business Logic ──────────────────────────────────────────────────────────
+
+def compute_line_total(item: dict) -> float:
+    gross = item["qty"] * item["price"]
+    if item.get("discountType") == "amount":
+        return max(0.0, gross - item.get("discount", 0))
+    return gross * (1 - item.get("discount", 0) / 100)
+
+
+def compute_totals(items: list) -> tuple:
+    subtotal = sum(i["qty"] * i["price"] for i in items)
+    grand_total = sum(compute_line_total(i) for i in items)
+    return subtotal, grand_total
+
+
+def generate_invoice_number(count: int) -> str:
+    now = datetime.now(timezone.utc)
+    yy = str(now.year)[2:]
+    mm = str(now.month).zfill(2)
+    seq = str(count + 1).zfill(3)
+    return f"AZ-{yy}{mm}-{seq}"
+
+
+# ─── Customers Routes ────────────────────────────────────────────────────────
+
+@api_router.get("/customers")
+async def list_customers():
+    docs = await db.customers.find({}, {"_id": 0}).sort("createdAt", 1).to_list(1000)
+    return docs
+
+
+@api_router.post("/customers", status_code=201)
+async def create_customer(body: CustomerCreate):
+    cid = await get_next_id("customers")
+    doc = {
+        "id": cid,
+        "name": body.name.strip(),
+        "address": body.address.strip(),
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.customers.insert_one(doc)
+    return serialize(doc)
+
+
+@api_router.put("/customers/{cid}")
+async def update_customer(cid: int, body: CustomerCreate):
+    doc = await db.customers.find_one_and_update(
+        {"id": cid},
+        {"$set": {"name": body.name.strip(), "address": body.address.strip()}},
+        return_document=True
+    )
+    if not doc:
+        raise HTTPException(404, "Customer not found")
+    return serialize(doc)
+
+
+@api_router.delete("/customers/{cid}", status_code=204)
+async def delete_customer(cid: int):
+    result = await db.customers.delete_one({"id": cid})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Customer not found")
+
+
+# ─── Products Routes ─────────────────────────────────────────────────────────
+
+@api_router.get("/products")
+async def list_products():
+    docs = await db.products.find({}, {"_id": 0}).sort("createdAt", 1).to_list(1000)
+    for d in docs:
+        d["defaultPrice"] = float(d.get("defaultPrice", 0))
+    return docs
+
+
+@api_router.post("/products", status_code=201)
+async def create_product(body: ProductCreate):
+    pid = await get_next_id("products")
+    doc = {
+        "id": pid,
+        "name": body.name.strip(),
+        "defaultPrice": float(body.defaultPrice),
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.products.insert_one(doc)
+    return serialize(doc)
+
+
+@api_router.put("/products/{pid}")
+async def update_product(pid: int, body: ProductCreate):
+    doc = await db.products.find_one_and_update(
+        {"id": pid},
+        {"$set": {"name": body.name.strip(), "defaultPrice": float(body.defaultPrice)}},
+        return_document=True
+    )
+    if not doc:
+        raise HTTPException(404, "Product not found")
+    result = serialize(doc)
+    result["defaultPrice"] = float(result.get("defaultPrice", 0))
+    return result
+
+
+@api_router.delete("/products/{pid}", status_code=204)
+async def delete_product(pid: int):
+    result = await db.products.delete_one({"id": pid})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Product not found")
+
+
+# ─── Invoices Routes ─────────────────────────────────────────────────────────
+
+def serialize_invoice(doc: dict) -> dict:
+    if not doc:
+        return None
+    doc = dict(doc)
+    doc.pop("_id", None)
+    doc["subtotal"] = float(doc.get("subtotal", 0))
+    doc["grandTotal"] = float(doc.get("grandTotal", 0))
+    items = doc.get("items", [])
+    for item in items:
+        item["qty"] = float(item.get("qty", 0))
+        item["price"] = float(item.get("price", 0))
+        item["discount"] = float(item.get("discount", 0))
+        item["total"] = float(item.get("total", 0))
+        item.setdefault("discountType", "percent")
+    doc["items"] = items
+    return doc
+
+
+VALID_STATUSES = {"draft", "unpaid", "paid", "overdue"}
+DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+@api_router.get("/invoices/next-number")
+async def get_next_invoice_number():
+    now = datetime.now(timezone.utc)
+    yy = str(now.year)[2:]
+    mm = str(now.month).zfill(2)
+    prefix = f"AZ-{yy}{mm}-"
+    count = await db.invoices.count_documents({"invoiceNumber": {"$regex": f"^{re.escape(prefix)}"}})
+    return {"invoiceNumber": generate_invoice_number(count)}
+
+
+@api_router.get("/invoices")
+async def list_invoices(
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    dateFrom: Optional[str] = Query(None),
+    dateTo: Optional[str] = Query(None),
+):
+    query = {}
+    conditions = []
+
+    if search:
+        conditions.append({
+            "$or": [
+                {"invoiceNumber": {"$regex": search, "$options": "i"}},
+                {"customerName": {"$regex": search, "$options": "i"}},
+            ]
+        })
+
+    if status and status in VALID_STATUSES:
+        conditions.append({"status": status})
+
+    if dateFrom and DATE_REGEX.match(dateFrom):
+        conditions.append({"date": {"$gte": dateFrom}})
+
+    if dateTo and DATE_REGEX.match(dateTo):
+        conditions.append({"date": {"$lte": dateTo}})
+
+    if conditions:
+        query = {"$and": conditions}
+
+    docs = await db.invoices.find(query, {"_id": 0}).sort("createdAt", -1).to_list(1000)
+    return [serialize_invoice(d) for d in docs]
+
+
+@api_router.post("/invoices", status_code=201)
+async def create_invoice(body: InvoiceCreate):
+    if not body.invoiceNumber or not body.date:
+        raise HTTPException(400, "invoiceNumber and date are required")
+
+    items = [i.model_dump() for i in body.items]
+    subtotal, grand_total = compute_totals(items)
+
+    resolved_status = body.status if body.status in VALID_STATUSES else ("draft" if body.isDraft else "unpaid")
+
+    inv_id = await get_next_id("invoices")
+    doc = {
+        "id": inv_id,
+        "invoiceNumber": body.invoiceNumber,
+        "date": body.date,
+        "customerName": body.customerName,
+        "customerAddress": body.customerAddress,
+        "subtotal": subtotal,
+        "grandTotal": grand_total,
+        "isDraft": body.isDraft,
+        "status": resolved_status,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "items": [
+            {**i, "total": compute_line_total(i)}
+            for i in items
+        ],
+    }
+    await db.invoices.insert_one(doc)
+    return serialize_invoice(doc)
+
+
+@api_router.get("/invoices/{inv_id}")
+async def get_invoice(inv_id: int):
+    doc = await db.invoices.find_one({"id": inv_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Invoice not found")
+    return serialize_invoice(doc)
+
+
+@api_router.put("/invoices/{inv_id}")
+async def update_invoice(inv_id: int, body: InvoiceCreate):
+    existing = await db.invoices.find_one({"id": inv_id})
+    if not existing:
+        raise HTTPException(404, "Invoice not found")
+
+    items = [i.model_dump() for i in body.items]
+    subtotal, grand_total = compute_totals(items)
+
+    resolved_status = body.status if body.status in VALID_STATUSES else existing.get("status", "draft")
+
+    update_data = {
+        "invoiceNumber": body.invoiceNumber,
+        "date": body.date,
+        "customerName": body.customerName,
+        "customerAddress": body.customerAddress,
+        "subtotal": subtotal,
+        "grandTotal": grand_total,
+        "isDraft": body.isDraft,
+        "status": resolved_status,
+        "items": [
+            {**i, "total": compute_line_total(i)}
+            for i in items
+        ],
+    }
+
+    doc = await db.invoices.find_one_and_update(
+        {"id": inv_id},
+        {"$set": update_data},
+        return_document=True
+    )
+    return serialize_invoice(doc)
+
+
+@api_router.delete("/invoices/{inv_id}", status_code=204)
+async def delete_invoice(inv_id: int):
+    result = await db.invoices.delete_one({"id": inv_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Invoice not found")
+
+
+# ─── Health ──────────────────────────────────────────────────────────────────
+
+@api_router.get("/")
+async def root():
+    return {"message": "AZ Distribution Invoice Manager API"}
+
+
+# ─── Seed Data ───────────────────────────────────────────────────────────────
+
+async def seed_data():
+    customer_count = await db.customers.count_documents({})
+    if customer_count == 0:
+        customers = [
+            {"name": "Shoaib Hardware Store", "address": "Main Bazaar, Mirpur AK"},
+            {"name": "Ali Electronics", "address": "New Town, Mirpur AK"},
+            {"name": "Bilal Traders", "address": "Chakswari Road, Mirpur AK"},
+        ]
+        for c in customers:
+            cid = await get_next_id("customers")
+            await db.customers.insert_one({
+                "id": cid,
+                "name": c["name"],
+                "address": c["address"],
+                "createdAt": datetime.now(timezone.utc).isoformat(),
+            })
+        logger.info("Seeded 3 customers")
+
+    product_count = await db.products.count_documents({})
+    if product_count == 0:
+        products = [
+            {"name": "Wall Paint 10L", "defaultPrice": 3500},
+            {"name": "Paint Brush Set", "defaultPrice": 450},
+            {"name": "Masking Tape", "defaultPrice": 120},
+            {"name": "Roller Set", "defaultPrice": 650},
+            {"name": "Paint Thinner 5L", "defaultPrice": 800},
+        ]
+        for p in products:
+            pid = await get_next_id("products")
+            await db.products.insert_one({
+                "id": pid,
+                "name": p["name"],
+                "defaultPrice": float(p["defaultPrice"]),
+                "createdAt": datetime.now(timezone.utc).isoformat(),
+            })
+        logger.info("Seeded 5 products")
+
+
+app.include_router(api_router)
+
+
+@app.on_event("startup")
+async def startup():
+    await seed_data()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    client.close()
