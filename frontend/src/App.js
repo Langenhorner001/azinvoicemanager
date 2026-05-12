@@ -1,46 +1,53 @@
-import { Switch, Route, Redirect } from 'wouter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import DashboardPage from '@/pages/dashboard';
-import InvoicesPage from '@/pages/invoices';
-import InvoiceEditorPage from '@/pages/invoice-editor';
-import CustomersPage from '@/pages/customers';
-import ProductsPage from '@/pages/products';
-import NotFoundPage from '@/pages/not-found';
+import { useEffect } from "react";
+import "@/App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import axios from "axios";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30000,
-    },
-  },
-});
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
-function Router() {
+const Home = () => {
+  const helloWorldApi = async () => {
+    try {
+      const response = await axios.get(`${API}/`);
+      console.log(response.data.message);
+    } catch (e) {
+      console.error(e, `errored out requesting / api`);
+    }
+  };
+
+  useEffect(() => {
+    helloWorldApi();
+  }, []);
+
   return (
-    <Switch>
-      <Route path="/" component={() => <Redirect to="/dashboard" />} />
-      <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/invoices" component={InvoicesPage} />
-      <Route path="/invoices/new" component={() => <InvoiceEditorPage mode="new" />} />
-      <Route path="/invoices/:id/edit" component={() => <InvoiceEditorPage mode="edit" />} />
-      <Route path="/customers" component={CustomersPage} />
-      <Route path="/products" component={ProductsPage} />
-      <Route component={NotFoundPage} />
-    </Switch>
+    <div>
+      <header className="App-header">
+        <a
+          className="App-link"
+          href="https://emergent.sh"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
+        </a>
+        <p className="mt-5">Building something incredible ~!</p>
+      </header>
+    </div>
   );
-}
+};
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Router />
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="App">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />}>
+            <Route index element={<Home />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </div>
   );
 }
 
